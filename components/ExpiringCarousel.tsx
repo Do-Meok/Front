@@ -1,11 +1,11 @@
 import React, { useMemo, useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  Animated,
+  Dimensions,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 type ExpiringItem = {
@@ -76,13 +76,18 @@ export default function ExpiringCarousel({
           return (
             <Pressable
               onPress={() => onPressItem?.(item)}
-              style={danger ? styles.cardDanger : styles.cardSafe}
+              style={[
+                styles.cardShell,
+                danger ? styles.cardDanger : styles.cardSafe,
+              ]}
             >
-              <Text style={styles.badge}>{badge}</Text>
-              <Text style={styles.name} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <Text style={styles.sub}>유통기한: {item.expiresAt}</Text>
+              <View style={styles.card}>
+                <Text style={styles.badge}>{badge}</Text>
+                <Text style={styles.name} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={styles.sub}>유통기한: {item.expiresAt}</Text>
+              </View>
             </Pressable>
           );
         }}
@@ -112,10 +117,20 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 10,
   },
-  card: {
+  cardShell: {
     width: CARD_W,
+    height: 180,
     borderRadius: 16,
-    padding: 16,
+    overflow: "hidden",
+
+    // iOS shadow
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+
+    // Android shadow
+    elevation: 4,
   },
   cardDanger: {
     backgroundColor: "#ff6b6b",
@@ -123,10 +138,24 @@ const styles = StyleSheet.create({
   cardSafe: {
     backgroundColor: "#ffd166",
   },
+
+  // ✅ 안쪽 컨텐츠 레이아웃
+  card: {
+    flex: 1,
+    padding: 16,
+    justifyContent: "space-between",
+  },
+
+  // ✅ 배지: pill 형태 + 배경 살짝
   badge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.55)",
+
     fontWeight: "900",
-    fontSize: 16,
-    marginBottom: 8,
+    fontSize: 14,
     color: "#111",
   },
   name: {

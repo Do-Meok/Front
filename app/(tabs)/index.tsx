@@ -29,10 +29,10 @@ const featured = [
 ];
 
 const expiring = [
-  { id: "1", name: "우유", expiresAt: "2025-12-31" },
+  { id: "1", name: "우유", expiresAt: "2026-01-31" },
   { id: "2", name: "양파", expiresAt: "2026-01-02" },
-  { id: "3", name: "두부", expiresAt: "2025-12-30" },
-  { id: "4", name: "달걀", expiresAt: "2026-01-01" },
+  { id: "3", name: "두부", expiresAt: "2026-01-30" },
+  { id: "4", name: "달걀", expiresAt: "2026-02-01" },
 ];
 
 export default function HomeScreen() {
