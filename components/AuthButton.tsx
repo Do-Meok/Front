@@ -4,12 +4,16 @@ import { Alert, Pressable, StyleSheet, Text } from "react-native";
 
 export default function AuthButton() {
   const onPressKakao = () => {
-    // 실제 카카오 로그인 붙이기 전까지는 임시로 auth 이동
     Alert.alert("카카오 로그인 준비 중");
   };
 
   const onPressCommon = () => {
     router.replace("/auth");
+  };
+
+  const onPressGuest = () => {
+    router.replace("/(tabs)"); // ✅ (tabs)/index로 이동
+    // 필요하면 router.replace("/(tabs)/index");
   };
 
   return (
@@ -23,6 +27,10 @@ export default function AuthButton() {
 
       <Pressable style={styles.secondaryBtn} onPress={onPressCommon}>
         <Text style={styles.secondaryBtnText}>일반 로그인으로 시작하기</Text>
+      </Pressable>
+
+      <Pressable style={styles.ghostBtn} onPress={onPressGuest}>
+        <Text style={styles.ghostBtnText}>로그인 없이 시작</Text>
       </Pressable>
     </>
   );
@@ -43,6 +51,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.BLACK,
   },
+
   secondaryBtn: {
     height: 46,
     borderRadius: 12,
@@ -56,5 +65,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: colors.BLACK,
+  },
+
+  // ✅ 로그인 없이 시작 (좀 더 가벼운 버튼)
+  ghostBtn: {
+    height: 46,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ghostBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.GRAY_700 ?? colors.GRAY,
+    textDecorationLine: "underline",
   },
 });
