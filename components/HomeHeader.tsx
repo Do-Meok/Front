@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end", // ✅ 오른쪽 고정
+    justifyContent: "flex-end",
   },
   bell: {
     width: 40,

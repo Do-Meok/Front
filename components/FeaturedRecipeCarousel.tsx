@@ -3,6 +3,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  ImageSourcePropType,
   Pressable,
   StyleSheet,
   Text,
@@ -14,13 +15,23 @@ type FeaturedRecipe = {
   id: string;
   title: string;
   desc: string;
-  imageUri?: string; // remote uri or undefined
+  image?: string | ImageSourcePropType;
 };
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const GAP = 12;
-const CARD_W = Math.min(SCREEN_W * 0.86, 360); // 카드 폭
+const CARD_W = Math.min(SCREEN_W * 0.86, 360);
 const SNAP = CARD_W + GAP;
+
+function toImageSource(
+  image?: FeaturedRecipe["image"],
+): ImageSourcePropType | null {
+  if (!image) return null;
+  // remote uri
+  if (typeof image === "string") return { uri: image };
+  // local require(...)
+  return image;
+}
 
 export default function FeaturedRecipeCarousel({
   titleLabel = "추천 메뉴",
@@ -52,25 +63,28 @@ export default function FeaturedRecipeCarousel({
           const first = viewableItems?.[0]?.index;
           if (typeof first === "number") setActiveIndex(first);
         }}
-        renderItem={({ item }) => (
-          <Pressable style={styles.card} onPress={() => onPressItem?.(item)}>
-            {item.imageUri ? (
-              <Image source={{ uri: item.imageUri }} style={styles.heroImage} />
-            ) : (
-              <View style={[styles.heroImage, styles.imagePlaceholder]} />
-            )}
+        renderItem={({ item }) => {
+          const src = toImageSource(item.image);
 
-            <View style={styles.textArea}>
-              <Text style={styles.title} numberOfLines={1}>
-                {item.title}
-              </Text>
-              <EllipsizedDesc text={item.desc} />
-            </View>
-          </Pressable>
-        )}
+          return (
+            <Pressable style={styles.card} onPress={() => onPressItem?.(item)}>
+              {src ? (
+                <Image source={src} style={styles.heroImage} />
+              ) : (
+                <View style={[styles.heroImage, styles.imagePlaceholder]} />
+              )}
+
+              <View style={styles.textArea}>
+                <Text style={styles.title} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <EllipsizedDesc text={item.desc} />
+              </View>
+            </Pressable>
+          );
+        }}
       />
 
-      {/* 페이지 점 */}
       <View style={styles.dots}>
         {items.map((_, i) => (
           <View

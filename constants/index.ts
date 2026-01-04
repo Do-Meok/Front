@@ -1,11 +1,13 @@
 const colors = {
-  // 탭 설정
-  ACTIVE: "#111111",
+  BLACK: "#111111",
+  WHITE: "#FFF",
+  GRAY: "#555",
+  KAKAO: "#FEE500",
   INACTIVE: "#9AA0A6",
   BORDER: "#EAECEF",
-
-  // 테마
-  WHITE: "#FFF",
+  RED_500: "#FF5F5F",
+  GRAY_200: "#E2E8F0",
+  GRAY_700: "#374151",
 };
 
 export { colors };

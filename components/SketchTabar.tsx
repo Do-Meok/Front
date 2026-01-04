@@ -91,7 +91,7 @@ export default function SketchTabBar({
         ]}
       >
         {ingredientItems.map((item, index) => {
-          const color = item.focused ? colors.ACTIVE : colors.INACTIVE;
+          const color = item.focused ? colors.BLACK : colors.INACTIVE;
 
           return (
             <View
@@ -141,7 +141,7 @@ export default function SketchTabBar({
         const label =
           options.tabBarLabel?.toString() ?? options.title ?? route.name;
 
-        const color = focused ? colors.ACTIVE : colors.INACTIVE;
+        const color = focused ? colors.BLACK : colors.INACTIVE;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -174,7 +174,7 @@ export default function SketchTabBar({
                 styles.item,
                 pressed && { opacity: 0.7 },
               ]}
-              android_ripple={{ color: "#00000010", borderless: false }}
+              android_ripple={{ color: colors.BLACK, borderless: false }}
             >
               {options.tabBarIcon
                 ? options.tabBarIcon({ focused, color, size: 26 })
@@ -196,13 +196,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderTopWidth: 1,
     borderTopColor: colors.BORDER,
-    backgroundColor: "#fff",
+    backgroundColor: colors.WHITE,
     paddingTop: 8,
 
     ...Platform.select({
       android: { elevation: 10 },
       ios: {
-        shadowColor: "#000",
+        shadowColor: colors.BLACK,
         shadowOpacity: 0.08,
         shadowRadius: 10,
         shadowOffset: { width: 0, height: -4 },

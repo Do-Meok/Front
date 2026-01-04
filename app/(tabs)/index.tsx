@@ -12,19 +12,19 @@ const featured = [
     id: "r1",
     title: "크림 파스타",
     desc: "우유(D-2)를 처리할 수 있는 크림 파스타 어때요?  ",
-    imageUri: "https://picsum.photos/600/400?1",
+    image: require("@/assets/images/food/pasta.jpg"),
   },
   {
     id: "r2",
     title: "두부김치",
     desc: "두부가 오늘까지라면? 간단하게 한 끼 해결!",
-    imageUri: "https://picsum.photos/600/400?2",
+    image: require("@/assets/images/food/tofu-kimchi.jpg"),
   },
   {
     id: "r3",
     title: "계란볶음밥",
     desc: "재료 적어도 가능한 빠른 메뉴!",
-    imageUri: "https://picsum.photos/600/400?3",
+    image: require("@/assets/images/food/eggbbokumbab.jpg"),
   },
 ];
 
