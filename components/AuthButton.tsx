@@ -12,8 +12,7 @@ export default function AuthButton() {
   };
 
   const onPressGuest = () => {
-    router.replace("/(tabs)"); // ✅ (tabs)/index로 이동
-    // 필요하면 router.replace("/(tabs)/index");
+    router.replace("/(tabs)");
   };
 
   return (
@@ -67,7 +66,6 @@ const styles = StyleSheet.create({
     color: colors.BLACK,
   },
 
-  // ✅ 로그인 없이 시작 (좀 더 가벼운 버튼)
   ghostBtn: {
     height: 46,
     borderRadius: 12,

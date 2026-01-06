@@ -33,26 +33,9 @@ export default function SignUpScreen() {
     },
   });
   const onSubmit = (formValues: SignUpForm) => {
-    console.log("✅ submit payload:", formValues);
+    // 확인용
     Alert.alert("submit", JSON.stringify(formValues, null, 2));
-    const {
-      email,
-      password,
-      checked_password,
-      nickname,
-      name,
-      birth,
-      phone_num,
-    } = formValues;
-    signupMutation.mutate({
-      email,
-      password,
-      checked_password,
-      nickname,
-      name,
-      birth,
-      phone_num,
-    });
+    signupMutation.mutate(formValues);
     router.replace("/auth");
   };
 

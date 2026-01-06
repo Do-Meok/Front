@@ -2,6 +2,7 @@ import EmailInput from "@/components/EmailInput";
 import FoodThingLogo from "@/components/FoodThingLogo";
 import PasswordInput from "@/components/PasswordInput";
 import { colors } from "@/constants";
+import useAuth from "@/hooks/useAuth";
 import { LoginForm } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -19,17 +20,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LoginScreen() {
+  const { loginMutation } = useAuth();
   const loginForm = useForm<LoginForm>({
     defaultValues: {
       email: "",
       password: "",
     },
   });
-  const onPressLogin = () => {
-    Alert.alert("확인", "아이디/비밀번호를 확인해줘!");
-
-    Alert.alert("로그인(임시)", `ID: `);
-    router.replace("/(tabs)");
+  const onPressLogin = (formValues: LoginForm) => {
+    loginMutation.mutate(formValues);
   };
 
   const goBackToOnboardingLast = () => {
@@ -68,7 +67,10 @@ export default function LoginScreen() {
             </FormProvider>
 
             {/* 로그인 버튼 */}
-            <Pressable style={[styles.primaryBtn]} onPress={onPressLogin}>
+            <Pressable
+              style={[styles.primaryBtn]}
+              onPress={loginForm.handleSubmit(onPressLogin)}
+            >
               <Text style={styles.primaryBtnText}>로그인</Text>
             </Pressable>
 

@@ -1,4 +1,4 @@
-import { signup } from "@/api/auth";
+import { login, signup } from "@/api/auth";
 import { useMutation } from "@tanstack/react-query";
 import { router } from "expo-router";
 
@@ -9,11 +9,20 @@ function useSignUp() {
   });
 }
 
+function useLogin() {
+  return useMutation({
+    mutationFn: login,
+    onSuccess: () => router.replace("/(tabs)"),
+  });
+}
+
 function useAuth() {
   const signupMutation = useSignUp();
+  const loginMutation = useLogin();
 
   return {
     signupMutation,
+    loginMutation,
   };
 }
 
