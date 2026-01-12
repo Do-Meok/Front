@@ -2,13 +2,13 @@ import { colors } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-    FlatList,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  FlatList,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 type Fridge = {
@@ -48,7 +48,7 @@ export default function FridgeManagePage() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>냉장고 관리</Text>
         <Pressable onPress={() => setOpen(true)} style={styles.headerPlus}>
-          <Ionicons name="add" size={22} color={colors.ACTIVE} />
+          <Ionicons name="add" size={22} color={colors.BLACK} />
         </Pressable>
       </View>
 
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f1f3ff",
     borderRadius: 999,
   },
-  pillText: { color: colors.ACTIVE, fontWeight: "800", fontSize: 12 },
+  pillText: { color: colors.BLACK, fontWeight: "800", fontSize: 12 },
 
   smallBtn: {
     marginTop: 12,
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     marginTop: 12,
-    backgroundColor: colors.ACTIVE,
+    backgroundColor: colors.BLACK,
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
