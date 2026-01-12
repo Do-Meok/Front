@@ -1,4 +1,5 @@
 import { colors } from "@/constants";
+import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -39,7 +40,10 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* 홈 헤더 */}
-      <HomeHeader onPressBell={() => {}} />
+      <HomeHeader
+        onPressBell={() => {}}
+        onPressProfile={() => router.push("/(tabs)/mypage")}
+      />
       <View style={styles.page}>
         {/* 오늘의 추천 */}
         <FeaturedRecipeCarousel

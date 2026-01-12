@@ -1,17 +1,21 @@
 import { colors } from "@/constants";
 import { router } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 
 export default function AuthButton() {
   const onPressKakao = () => {
-    Alert.alert("카카오 로그인 준비 중");
+    // 카카오 로그인 (임시로 메인 탭으로 이동)
+    // TODO: 실제 카카오 로그인 구현 필요
+    router.replace("/(tabs)");
   };
 
   const onPressCommon = () => {
-    router.replace("/auth");
+    // 일반 로그인 화면으로 이동 (로그인 폼 표시)
+    router.push("/auth/login");
   };
 
   const onPressGuest = () => {
+    // 로그인 없이 시작
     router.replace("/(tabs)");
   };
 

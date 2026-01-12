@@ -1,96 +1,156 @@
-import EmailInput from "@/components/EmailInput";
+import AuthButton from "@/components/AuthButton";
 import FoodThingLogo from "@/components/FoodThingLogo";
-import PasswordInput from "@/components/PasswordInput";
 import { colors } from "@/constants";
-import useAuth from "@/hooks/useAuth";
-import { LoginForm } from "@/types";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React from "react";
-import { FormProvider, useForm } from "react-hook-form";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function LoginScreen() {
-  const { loginMutation } = useAuth();
-  const loginForm = useForm<LoginForm>({
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-  const onPressLogin = (formValues: LoginForm) => {
-    loginMutation.mutate(formValues);
-  };
+export default function AuthScreen() {
+  const params = useLocalSearchParams<{ from?: string }>();
+  const fromOnboarding = params.from === "onboarding";
+  const fromSkip = params.from === "skip";
 
-  const goBackToOnboardingLast = () => {
-    router.replace({
-      pathname: "/(onboarding)",
-      params: { start: "last", anim: "0" },
-    });
-  };
+  // 애니메이션 값들
+  const logoY = useRef(new Animated.Value(0)).current;
+  const subtitleOpacity = useRef(new Animated.Value(0)).current;
+  const subtitleY = useRef(new Animated.Value(8)).current;
+  const authOpacity = useRef(new Animated.Value(0)).current;
+  const authY = useRef(new Animated.Value(12)).current;
+  const [showSubtitle, setShowSubtitle] = useState(false);
+
+  // 온보딩에서 온 경우 애니메이션 실행
+  useEffect(() => {
+    if (fromOnboarding) {
+      // 초기 상태 설정
+      logoY.setValue(0);
+      setShowSubtitle(true);
+      subtitleOpacity.setValue(0);
+      subtitleY.setValue(8);
+      authOpacity.setValue(0);
+      authY.setValue(12);
+
+      // 애니메이션 시퀀스 - 부드럽게 연결
+      Animated.sequence([
+        // 1. 로고 위로 이동
+        Animated.timing(logoY, {
+          toValue: -60,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        // 2. 문구 나타남
+        Animated.parallel([
+          Animated.timing(subtitleOpacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(subtitleY, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]),
+        // 3. 잠시 대기
+        Animated.delay(500),
+        // 4. 문구 사라지면서 동시에 버튼 나타남 (겹치는 효과)
+        Animated.parallel([
+          // 문구 사라짐
+          Animated.parallel([
+            Animated.timing(subtitleOpacity, {
+              toValue: 0,
+              duration: 250,
+              useNativeDriver: true,
+            }),
+            Animated.timing(subtitleY, {
+              toValue: -8,
+              duration: 250,
+              useNativeDriver: true,
+            }),
+          ]),
+          // 버튼 나타남 (문구가 절반 사라진 후 시작)
+          Animated.sequence([
+            Animated.delay(120),
+            Animated.parallel([
+              Animated.timing(authOpacity, {
+                toValue: 1,
+                duration: 400,
+                useNativeDriver: true,
+              }),
+              Animated.timing(authY, {
+                toValue: 0,
+                duration: 400,
+                useNativeDriver: true,
+              }),
+            ]),
+          ]),
+        ]),
+      ]).start(({ finished }) => {
+        if (finished) {
+          setShowSubtitle(false);
+        }
+      });
+    } else if (fromSkip) {
+      // 스킵한 경우: 애니메이션 없이 바로 표시
+      logoY.setValue(-60);
+      setShowSubtitle(false);
+      subtitleOpacity.setValue(0);
+      subtitleY.setValue(0);
+      authOpacity.setValue(1);
+      authY.setValue(0);
+    } else {
+      // 기본: AuthButton 화면 (애니메이션 없이 바로 표시)
+      logoY.setValue(-60);
+      setShowSubtitle(false);
+      subtitleOpacity.setValue(0);
+      subtitleY.setValue(0);
+      authOpacity.setValue(1);
+      authY.setValue(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromOnboarding, fromSkip]);
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Pressable
-          onPress={goBackToOnboardingLast}
-          hitSlop={12}
-          style={styles.backBtn}
-        >
-          <Ionicons name="chevron-back" size={28} color="#111" />
-        </Pressable>
+        <View style={{ width: 40 }} />
       </View>
-      <KeyboardAvoidingView
-        style={styles.kav}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <View style={styles.wrap}>
-          {/* 로고 */}
-          <View style={styles.logoBox}>
-            <FoodThingLogo size={44} />
-          </View>
+      <View style={styles.wrap}>
+        {/* 로고 */}
+        <Animated.View
+          style={[styles.logoBox, { transform: [{ translateY: logoY }] }]}
+        >
+          <FoodThingLogo size={44} />
+        </Animated.View>
 
-          {/* 입력 */}
-          <View style={styles.form}>
-            <FormProvider {...loginForm}>
-              <EmailInput />
-              <PasswordInput />
-            </FormProvider>
+        {/* 문구: 나타났다가 사라짐 */}
+        {showSubtitle && (
+          <Animated.Text
+            style={[
+              styles.subtitle,
+              {
+                opacity: subtitleOpacity,
+                transform: [{ translateY: subtitleY }],
+              },
+            ]}
+          >
+            당신의 요리를 즐겁게
+          </Animated.Text>
+        )}
 
-            {/* 로그인 버튼 */}
-            <Pressable
-              style={[styles.primaryBtn]}
-              onPress={loginForm.handleSubmit(onPressLogin)}
-            >
-              <Text style={styles.primaryBtnText}>로그인</Text>
-            </Pressable>
-
-            {/* 회원가입 / 비밀번호 찾기 */}
-            <View style={styles.row}>
-              <Pressable onPress={() => router.push("/auth/signup")}>
-                <Text style={styles.link}>회원가입</Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() =>
-                  Alert.alert("임시", "비밀번호 찾기 화면을 붙이면 돼요")
-                }
-              >
-                <Text style={styles.link}>비밀번호 찾기</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
+        {/* 로그인 버튼들: 문구 사라진 뒤 등장 */}
+        <Animated.View
+          style={[
+            styles.authCard,
+            {
+              opacity: authOpacity,
+              transform: [{ translateY: authY }],
+            },
+          ]}
+        >
+          <AuthButton />
+        </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -105,52 +165,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 12,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  kav: {
-    flex: 1,
-  },
   wrap: {
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: "center",
     gap: 18,
+    alignItems: "center",
   },
-
   logoBox: {
     alignItems: "center",
   },
-
-  form: {
+  subtitle: {
+    textAlign: "center",
+    color: colors.GRAY,
+    fontSize: 20,
+    fontWeight: "800",
+    lineHeight: 26,
+    marginBottom: 14,
+  },
+  authCard: {
+    width: "100%",
+    maxWidth: 420,
+    padding: 14,
     gap: 10,
   },
-
-  input: {
-    height: 46,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    paddingHorizontal: 12,
-  },
-
-  primaryBtn: {
-    height: 46,
-    borderRadius: 12,
-    backgroundColor: "#111",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 6,
-  },
-  primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "900" },
-
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-  link: { fontSize: 14, fontWeight: "800", color: "#111" },
 });

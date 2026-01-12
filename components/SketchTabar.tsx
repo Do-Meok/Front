@@ -224,12 +224,16 @@ export default function SketchTabBar({
     );
   }
 
-  // ✅ 기본(메인) 탭바: 기존 그대로
+  // ✅ 기본(메인) 탭바: 마이페이지 제외
+  const visibleRoutes = state.routes.filter(
+    (route) => route.name !== "mypage"
+  );
+
   return (
     <View style={wrapStyle}>
-      {state.routes.map((route, index) => {
+      {visibleRoutes.map((route, index) => {
         const { options } = descriptors[route.key];
-        const focused = state.index === index;
+        const focused = state.index === state.routes.findIndex((r) => r.key === route.key);
 
         const label =
           options.tabBarLabel?.toString() ?? options.title ?? route.name;
@@ -257,7 +261,7 @@ export default function SketchTabBar({
             key={route.key}
             style={[
               styles.itemWrap,
-              index !== state.routes.length - 1 && styles.dividerRight,
+              index !== visibleRoutes.length - 1 && styles.dividerRight,
             ]}
           >
             <Pressable

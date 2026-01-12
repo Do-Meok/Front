@@ -19,3 +19,48 @@ export type LoginForm = {
   email: string;
   password: string;
 };
+
+// Ingredient 관련 타입
+export type StorageType = "냉장" | "냉동" | "실온";
+
+export type AddIngredientRequest = {
+  purchase_date: string; // YYYY-MM-DD
+  ingredients: string[]; // 식재료명 배열
+};
+
+export type AddIngredientResponse = {
+  id: number;
+  name: string;
+  purchase_date: string | null;
+  expiration_date: string | null;
+  storage_type: StorageType | null;
+};
+
+export type SetIngredientRequest = {
+  expiration_date: string; // YYYY-MM-DD
+  storage_type: StorageType;
+};
+
+export type UpdateIngredientRequest = {
+  purchase_date?: string | null; // YYYY-MM-DD
+  expiration_date?: string | null; // YYYY-MM-DD
+  storage_type?: StorageType | null;
+};
+
+export type GetIngredientResponse = {
+  id: number;
+  name: string;
+  purchase_date: string | null;
+  expiration_date: string | null;
+  storage_type: StorageType | null;
+};
+
+// User 관련 타입
+export type InfoResponse = {
+  id: number;
+  email: string;
+  nickname: string;
+  name: string | null;
+  birth: string | null;
+  phone_num: string | null;
+};

@@ -71,6 +71,14 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      {/* 마이페이지 (탭바에 표시 안 함) */}
+      <Tabs.Screen
+        name="mypage"
+        options={{
+          href: null, // 탭바에 표시하지 않음
+        }}
+      />
     </Tabs>
   );
 }

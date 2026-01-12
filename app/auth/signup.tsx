@@ -9,13 +9,12 @@ import { router } from "expo-router";
 import React from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -33,10 +32,7 @@ export default function SignUpScreen() {
     },
   });
   const onSubmit = (formValues: SignUpForm) => {
-    // 확인용
-    Alert.alert("submit", JSON.stringify(formValues, null, 2));
     signupMutation.mutate(formValues);
-    router.replace("/auth");
   };
 
   return (
