@@ -1,7 +1,13 @@
 import { getSecureStore } from "@/utils/secureStore";
 import axios from "axios";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "https://domeok.augustzero.duckdns.org";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+if (!API_URL) {
+  throw new Error(
+    "EXPO_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다. .env 파일을 확인해주세요."
+  );
+}
 
 export const PREFIX = "/api/v1";
 

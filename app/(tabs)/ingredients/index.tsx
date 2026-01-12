@@ -1,13 +1,11 @@
-import {
-  addIngredient,
-  deleteIngredient,
-  getIngredients,
-  updateIngredient,
-} from "@/api/ingredients";
+import { setIngredientDetails } from "@/api/ingredients";
+import useCreateIngredient from "@/hooks/useCreateIngredient";
+import useDeleteIngredient from "@/hooks/useDeleteIngredient";
+import useGetIngredients from "@/hooks/useGetIngredients";
+import useUpdateIngredient from "@/hooks/useUpdateIngredient";
 import { GetIngredientResponse, StorageType } from "@/types";
 import { getSecureStore } from "@/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -41,6 +39,7 @@ function daysLeft(expiresAt: string | null) {
 }
 
 function iconByName(name: string) {
+  if (!name) return "nutrition-outline";
   if (name.includes("소고기") || name.includes("고기"))
     return "restaurant-outline";
   if (name.includes("우유")) return "cafe-outline";
@@ -59,11 +58,11 @@ export default function IngredientsScreen() {
 
   const [buyDate, setBuyDate] = useState(fmtYYYYMMDD(new Date()));
   const [name, setName] = useState("");
+  const [addStorageType, setAddStorageType] = useState<StorageType | "">("");
+  const [addExpirationDate, setAddExpirationDate] = useState("");
   const [editName, setEditName] = useState("");
   const [editExpirationDate, setEditExpirationDate] = useState("");
   const [editStorageType, setEditStorageType] = useState<StorageType | "">("");
-
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     // 토큰 존재 여부 확인
@@ -72,71 +71,38 @@ export default function IngredientsScreen() {
     });
   }, []);
 
-  // 필터에 따른 쿼리 파라미터 설정
-  const queryParams = useMemo(() => {
-    if (filter === "전체") return undefined;
-    if (filter === "미분류") return { is_unclassified: true };
-    return { is_unclassified: false, storage: filter };
-  }, [filter]);
-
   // 식재료 목록 조회
   const {
     data: items = [],
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ["ingredients", queryParams],
-    queryFn: () => getIngredients(queryParams),
-  });
+    refetch,
+  } = useGetIngredients();
 
   // 식재료 추가
-  const addMutation = useMutation({
-    mutationFn: addIngredient,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ingredients"] });
-      setName("");
-      setBuyDate(fmtYYYYMMDD(new Date()));
-      setAddModalOpen(false);
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.detail ||
-        error?.response?.data?.message ||
-        JSON.stringify(error?.response?.data) ||
-        "식재료 추가에 실패했습니다.";
-      console.error("식재료 추가 에러:", error?.response?.data);
-      Alert.alert("오류", errorMessage);
-    },
-  });
+  const addMutation = useCreateIngredient();
 
   // 식재료 삭제
-  const deleteMutation = useMutation({
-    mutationFn: deleteIngredient,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ingredients"] });
-    },
-    onError: (error: any) => {
-      Alert.alert("오류", error?.response?.data?.message || "식재료 삭제에 실패했습니다.");
-    },
-  });
+  const deleteMutation = useDeleteIngredient();
 
   // 식재료 수정
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
-      updateIngredient(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ingredients"] });
-      setEditModalOpen(false);
-      setSelectedIngredient(null);
-    },
-    onError: (error: any) => {
-      Alert.alert("오류", error?.response?.data?.message || "식재료 수정에 실패했습니다.");
-    },
-  });
+  const updateMutation = useUpdateIngredient();
 
-  // 유통기한 순으로 정렬
+  // 필터링 및 유통기한 순으로 정렬
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
+    // 필터에 따라 데이터 필터링
+    let filtered = [...items];
+    
+    if (filter === "미분류") {
+      // storage_type이 null인 경우
+      filtered = filtered.filter((item) => !item.storage_type);
+    } else if (filter !== "전체") {
+      // 냉장, 냉동, 실온 필터
+      filtered = filtered.filter((item) => item.storage_type === filter);
+    }
+    
+    // 유통기한 순으로 정렬
+    return filtered.sort((a, b) => {
       if (!a.expiration_date && !b.expiration_date) return 0;
       if (!a.expiration_date) return 1;
       if (!b.expiration_date) return -1;
@@ -145,19 +111,48 @@ export default function IngredientsScreen() {
         new Date(b.expiration_date).getTime()
       );
     });
-  }, [items]);
+  }, [items, filter]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!name.trim()) {
       Alert.alert("알림", "식재료명을 입력해주세요.");
       return;
     }
     // 날짜가 없으면 오늘 날짜로 설정
     const purchaseDate = buyDate.trim() || fmtYYYYMMDD(new Date());
-    addMutation.mutate({
-      purchase_date: purchaseDate,
-      ingredients: [name.trim()],
-    });
+    
+    try {
+      const data = await addMutation.mutateAsync({
+        purchase_date: purchaseDate,
+        ingredients: [name.trim()],
+      });
+
+      // 추가된 식재료가 있고, 스토리지 타입이나 유통기한이 설정되어 있으면 상세 정보 설정
+      if (data && data.length > 0 && (addStorageType || addExpirationDate)) {
+        const ingredientId = data[0].id;
+        try {
+          // 스토리지 타입과 유통기한 둘 다 필수이므로, 하나만 있으면 다른 하나는 기본값 사용
+          const storageType = addStorageType || "냉장"; // 기본값
+          const expirationDate = addExpirationDate || fmtYYYYMMDD(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)); // 기본값: 7일 후
+          
+          await setIngredientDetails(ingredientId, {
+            storage_type: storageType as StorageType,
+            expiration_date: expirationDate,
+          });
+        } catch (error: any) {
+          console.error("식재료 상세 정보 설정 에러:", error);
+          // 추가는 성공했으므로 에러를 무시하거나 경고만 표시
+        }
+      }
+      
+      setName("");
+      setBuyDate(fmtYYYYMMDD(new Date()));
+      setAddStorageType("");
+      setAddExpirationDate("");
+      setAddModalOpen(false);
+    } catch (error) {
+      // 에러는 hook에서 처리됨
+    }
   };
 
   const handleDelete = (id: number) => {
@@ -186,10 +181,18 @@ export default function IngredientsScreen() {
     if (editExpirationDate) updateData.expiration_date = editExpirationDate;
     if (editStorageType) updateData.storage_type = editStorageType;
 
-    updateMutation.mutate({
-      id: selectedIngredient.id,
-      data: updateData,
-    });
+    updateMutation.mutate(
+      {
+        ingredientId: selectedIngredient.id,
+        data: updateData,
+      },
+      {
+        onSuccess: () => {
+          setEditModalOpen(false);
+          setSelectedIngredient(null);
+        },
+      }
+    );
   };
 
   if (error) {
@@ -199,6 +202,7 @@ export default function IngredientsScreen() {
 
     // 토큰이 있는데 401이면 토큰 문제이므로 "로그인하러 가기" 버튼 표시 안 함
     const showLoginButton = isUnauthorized && !hasToken;
+    const showRetryButton = !isUnauthorized;
 
     return (
       <View style={styles.errorContainer}>
@@ -216,6 +220,14 @@ export default function IngredientsScreen() {
             onPress={() => router.replace("/auth")}
           >
             <Text style={styles.loginBtnText}>로그인하러 가기</Text>
+          </Pressable>
+        )}
+        {showRetryButton && (
+          <Pressable
+            style={styles.retryBtn}
+            onPress={() => refetch()}
+          >
+            <Text style={styles.retryBtnText}>다시시도하기</Text>
           </Pressable>
         )}
       </View>
@@ -375,6 +387,47 @@ export default function IngredientsScreen() {
               <Ionicons name="add" size={18} color="#111" />
             </Pressable>
           </View>
+
+          <Text style={[styles.inputLabel, { marginTop: 12 }]}>
+            유통기한 (YYYY-MM-DD)
+          </Text>
+          <TextInput
+            value={addExpirationDate}
+            onChangeText={setAddExpirationDate}
+            placeholder="YYYY-MM-DD (선택사항)"
+            style={styles.input}
+          />
+          <Text style={styles.helper}>
+            유통기한을 입력하세요. 입력하지 않으면 기본값(7일 후)이 설정됩니다.
+          </Text>
+
+          <Text style={[styles.inputLabel, { marginTop: 12 }]}>보관장소</Text>
+          <View style={styles.storageRow}>
+            {(["냉장", "냉동", "실온"] as StorageType[]).map((s) => (
+              <Pressable
+                key={s}
+                onPress={() =>
+                  setAddStorageType(addStorageType === s ? "" : s)
+                }
+                style={[
+                  styles.storageBtn,
+                  addStorageType === s && styles.storageBtnActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.storageBtnText,
+                    addStorageType === s && styles.storageBtnTextActive,
+                  ]}
+                >
+                  {s}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.helper}>
+            보관장소를 선택하세요. 선택하지 않으면 기본값(냉장)이 설정됩니다.
+          </Text>
 
           <Pressable
             onPress={handleAdd}
@@ -537,6 +590,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loginBtnText: { color: "#fff", fontWeight: "900", fontSize: 14 },
+  retryBtn: {
+    marginTop: 8,
+    backgroundColor: "#111",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  retryBtnText: { color: "#fff", fontWeight: "900", fontSize: 14 },
 
   card: {
     flexDirection: "row",

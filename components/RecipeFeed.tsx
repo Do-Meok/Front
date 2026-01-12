@@ -61,7 +61,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
       (r) =>
         r.title.toLowerCase().includes(qq) ||
         r.desc.toLowerCase().includes(qq) ||
-        r.tags.join(" ").toLowerCase().includes(qq),
+        (r.tags && r.tags.join(" ").toLowerCase().includes(qq)),
     );
   }, [baseList, q]);
 

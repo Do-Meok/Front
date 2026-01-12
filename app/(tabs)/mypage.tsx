@@ -28,6 +28,7 @@ export default function MyPageScreen() {
     data: userInfo,
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["userInfo"],
     queryFn: getUserInfo,
@@ -50,6 +51,7 @@ export default function MyPageScreen() {
 
     // 토큰이 있는데 401이면 토큰 문제이므로 "로그인하러 가기" 버튼 표시 안 함
     const showLoginButton = isUnauthorized && !hasToken;
+    const showRetryButton = !isUnauthorized;
 
     return (
       <SafeAreaView style={styles.container}>
@@ -68,6 +70,14 @@ export default function MyPageScreen() {
               onPress={() => router.replace("/auth")}
             >
               <Text style={styles.loginBtnText}>로그인하러 가기</Text>
+            </Pressable>
+          )}
+          {showRetryButton && (
+            <Pressable
+              style={styles.retryBtn}
+              onPress={() => refetch()}
+            >
+              <Text style={styles.retryBtnText}>다시시도하기</Text>
             </Pressable>
           )}
         </View>
@@ -160,6 +170,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loginBtnText: { color: "#fff", fontWeight: "900", fontSize: 14 },
+  retryBtn: {
+    marginTop: 8,
+    backgroundColor: colors.BLACK,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  retryBtnText: { color: "#fff", fontWeight: "900", fontSize: 14 },
   header: {
     flexDirection: "row",
     alignItems: "center",

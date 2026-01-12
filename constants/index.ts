@@ -13,6 +13,7 @@ const colors = {
 const queryKey = {
   AUTH: "auth",
   GET_ME: "getMe",
+  INGREDIENTS: "ingredients"
 };
 
 export { colors, queryKey };
