@@ -22,6 +22,7 @@ export type LoginForm = {
 
 // Ingredient 관련 타입
 export type StorageType = "냉장" | "냉동" | "실온";
+export type StorageTypeBackend = "FRIDGE" | "FREEZER" | "ROOM";
 
 export type AddIngredientRequest = {
   purchase_date: string; // YYYY-MM-DD
@@ -30,15 +31,13 @@ export type AddIngredientRequest = {
 
 export type AddIngredientResponse = {
   id: number;
-  name: string;
-  purchase_date: string | null;
-  expiration_date: string | null;
-  storage_type: StorageType | null;
+  ingredient_name: string;
+  purchase_date: string;
 };
 
 export type SetIngredientRequest = {
   expiration_date: string; // YYYY-MM-DD
-  storage_type: StorageType;
+  storage_type: StorageTypeBackend;
 };
 
 export type UpdateIngredientRequest = {
@@ -49,8 +48,8 @@ export type UpdateIngredientRequest = {
 
 export type GetIngredientResponse = {
   id: number;
-  name: string;
-  purchase_date: string | null;
+  ingredient_name: string;
+  purchase_date: string;
   expiration_date: string | null;
   storage_type: StorageType | null;
 };

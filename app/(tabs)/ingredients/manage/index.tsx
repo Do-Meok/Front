@@ -1,12 +1,12 @@
-import { setIngredientDetails } from "@/api/ingredients";
 import QueryErrorView from "@/components/QueryErrorView";
 import { colors } from "@/constants";
 import useCreateIngredient from "@/hooks/useCreateIngredient";
 import useGetIngredients from "@/hooks/useGetIngredients";
+import useUpdateIngredient from "@/hooks/useUpdateIngredient";
 import { StorageType } from "@/types";
+import { addDays, fmtYYYYMMDD } from "@/utils/date";
 import { getSecureStore } from "@/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,20 +19,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-
-function fmtYYYYMMDD(d: Date) {
-  const yy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yy}-${mm}-${dd}`;
-}
-
-function addDays(dateStr: string, days: number) {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const dt = new Date(y, m - 1, d);
-  dt.setDate(dt.getDate() + days);
-  return fmtYYYYMMDD(dt);
-}
 
 export default function IngredientsManagePage() {
   const [mode, setMode] = useState<"expiry" | "status">("expiry");
@@ -61,36 +47,11 @@ export default function IngredientsManagePage() {
     return allItems.filter((item) => !item.storage_type);
   }, [allItems]);
 
-  const queryClient = useQueryClient();
-
   // 식재료 추가
   const addMutation = useCreateIngredient();
 
-  // 유통기한 및 보관장소 설정
-  const setDetailsMutation = useMutation({
-    mutationFn: ({
-      ingredientId,
-      expirationDate,
-      storageType,
-    }: {
-      ingredientId: number;
-      expirationDate: string;
-      storageType: StorageType;
-    }) =>
-      setIngredientDetails(ingredientId, {
-        expiration_date: expirationDate,
-        storage_type: storageType,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ingredients"] });
-    },
-    onError: (error: any) => {
-      Alert.alert(
-        "오류",
-        error?.response?.data?.message || "설정에 실패했습니다."
-      );
-    },
-  });
+  // 식재료 수정 (유통기한 및 보관장소 설정)
+  const updateMutation = useUpdateIngredient();
 
   const title =
     mode === "expiry" ? "유통기한 입력" : "냉장고 상태 입력";
@@ -98,10 +59,12 @@ export default function IngredientsManagePage() {
   const handleSetExpiration = (ingredientId: number, days: number) => {
     const expirationDate = addDays(fmtYYYYMMDD(new Date()), days);
     // 기본 보관장소는 냉장으로 설정
-    setDetailsMutation.mutate({
+    updateMutation.mutate({
       ingredientId,
-      expirationDate,
-      storageType: "냉장",
+      data: {
+        expiration_date: expirationDate,
+        storage_type: "냉장",
+      },
     });
   };
 
@@ -111,10 +74,12 @@ export default function IngredientsManagePage() {
   ) => {
     // 유통기한은 구입일 기준 7일로 설정 (또는 사용자 입력 필요)
     const expirationDate = addDays(fmtYYYYMMDD(new Date()), 7);
-    setDetailsMutation.mutate({
+    updateMutation.mutate({
       ingredientId,
-      expirationDate,
-      storageType,
+      data: {
+        expiration_date: expirationDate,
+        storage_type: storageType,
+      },
     });
   };
 
@@ -209,7 +174,7 @@ export default function IngredientsManagePage() {
           renderItem={({ item }) => (
             <View style={styles.card}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.name}>{item.ingredient_name}</Text>
                 {item.purchase_date && (
                   <View style={styles.row2}>
                     <Ionicons
@@ -232,12 +197,12 @@ export default function IngredientsManagePage() {
                         onPress={() => handleSetExpiration(item.id, d)}
                         style={[
                           styles.chip,
-                          setDetailsMutation.isPending && styles.chipDisabled,
+                          updateMutation.isPending && styles.chipDisabled,
                         ]}
-                        disabled={setDetailsMutation.isPending}
+                        disabled={updateMutation.isPending}
                       >
                         <Text style={styles.chipText}>
-                          {setDetailsMutation.isPending ? (
+                          {updateMutation.isPending ? (
                             <ActivityIndicator size="small" color={colors.BLACK} />
                           ) : (
                             `+${d}일`
@@ -255,12 +220,12 @@ export default function IngredientsManagePage() {
                         onPress={() => handleSetStorage(item.id, s)}
                         style={[
                           styles.chipOutline,
-                          setDetailsMutation.isPending && styles.chipDisabled,
+                          updateMutation.isPending && styles.chipDisabled,
                         ]}
-                        disabled={setDetailsMutation.isPending}
+                        disabled={updateMutation.isPending}
                       >
                         <Text style={styles.chipOutlineText}>
-                          {setDetailsMutation.isPending ? (
+                          {updateMutation.isPending ? (
                             <ActivityIndicator size="small" color={colors.INACTIVE} />
                           ) : (
                             s

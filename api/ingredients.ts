@@ -4,15 +4,32 @@ import {
   GetIngredientResponse,
   SetIngredientRequest,
   StorageType,
+  StorageTypeBackend,
   UpdateIngredientRequest,
 } from "@/types";
+import { fromBackendStorageType, toBackendStorageType } from "@/utils/storageType";
 import axiosInstance, { PREFIX } from "./axios";
+
+// 백엔드 응답 타입 (ingredient_name 사용)
+type BackendAddIngredientResponse = {
+  id: number;
+  ingredient_name: string;
+  purchase_date: string;
+};
+
+type BackendGetIngredientResponse = {
+  id: number;
+  ingredient_name: string;
+  purchase_date: string;
+  expiration_date: string | null;
+  storage_type: StorageTypeBackend | null;
+};
 
 // 식재료 추가
 async function addIngredient(
   body: AddIngredientRequest
 ): Promise<AddIngredientResponse[]> {
-  const { data } = await axiosInstance.post<AddIngredientResponse[]>(
+  const { data } = await axiosInstance.post<BackendAddIngredientResponse[]>(
     `${PREFIX}/ingredients`,
     body
   );
@@ -24,11 +41,18 @@ async function setIngredientDetails(
   ingredientId: number,
   body: SetIngredientRequest
 ): Promise<GetIngredientResponse> {
-  const { data } = await axiosInstance.patch<GetIngredientResponse>(
+  const backendBody = {
+    expiration_date: body.expiration_date,
+    storage_type: body.storage_type, // 이미 StorageTypeBackend 형식
+  };
+  const { data } = await axiosInstance.patch<BackendGetIngredientResponse>(
     `${PREFIX}/ingredients/${ingredientId}`,
-    body
+    backendBody
   );
-  return data;
+  return {
+    ...data,
+    storage_type: fromBackendStorageType(data.storage_type),
+  };
 }
 
 // 식재료 조회
@@ -36,22 +60,31 @@ async function getIngredients(params?: {
   is_unclassified?: boolean;
   storage?: StorageType;
 }): Promise<GetIngredientResponse[]> {
-  const { data } = await axiosInstance.get<GetIngredientResponse[]>(
+  const backendParams = params?.storage
+    ? { ...params, storage: toBackendStorageType(params.storage) }
+    : params;
+  const { data } = await axiosInstance.get<BackendGetIngredientResponse[]>(
     `${PREFIX}/ingredients`,
-    { params }
+    { params: backendParams }
   );
-  return data;
+  return data.map((item) => ({
+    ...item,
+    storage_type: fromBackendStorageType(item.storage_type),
+  }));
 }
 
 // 식재료 단일 조회
 async function getIngredient(
   ingredientId: number
 ): Promise<GetIngredientResponse> {
-  const { data } = await axiosInstance.get<GetIngredientResponse>(
+  const { data } = await axiosInstance.get<BackendGetIngredientResponse>(
     `${PREFIX}/ingredients/detail`,
     { params: { ingredient_id: ingredientId } }
   );
-  return data;
+  return {
+    ...data,
+    storage_type: fromBackendStorageType(data.storage_type),
+  };
 }
 
 // 식재료 삭제
@@ -66,11 +99,21 @@ async function updateIngredient(
   ingredientId: number,
   body: UpdateIngredientRequest
 ): Promise<GetIngredientResponse> {
-  const { data } = await axiosInstance.patch<GetIngredientResponse>(
+  const backendBody = {
+    purchase_date: body.purchase_date,
+    expiration_date: body.expiration_date,
+    storage_type: body.storage_type
+      ? toBackendStorageType(body.storage_type)
+      : null,
+  };
+  const { data } = await axiosInstance.patch<BackendGetIngredientResponse>(
     `${PREFIX}/ingredients/update/${ingredientId}`,
-    body
+    backendBody
   );
-  return data;
+  return {
+    ...data,
+    storage_type: fromBackendStorageType(data.storage_type),
+  };
 }
 
 export {

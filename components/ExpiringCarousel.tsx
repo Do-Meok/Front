@@ -1,3 +1,4 @@
+import { daysLeft } from "@/utils/date";
 import React, { useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -19,14 +20,6 @@ const CARD_W = Math.min(260, SCREEN_W * 0.62);
 const GAP = 12;
 const SNAP = CARD_W + GAP;
 
-function daysLeft(expiresAt: string) {
-  const end = new Date(expiresAt);
-  const now = new Date();
-  // 자정 기준으로 계산(대충용)
-  const diff = end.setHours(0, 0, 0, 0) - now.setHours(0, 0, 0, 0);
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-}
-
 export default function ExpiringCarousel({
   title = "빨리 드셔야 해요! 🚨",
   items,
@@ -42,7 +35,7 @@ export default function ExpiringCarousel({
   const computed = useMemo(() => {
     return items.map((it) => ({
       ...it,
-      dday: daysLeft(it.expiresAt),
+      dday: daysLeft(it.expiresAt) ?? 0, // null이면 0으로 처리
     }));
   }, [items]);
 

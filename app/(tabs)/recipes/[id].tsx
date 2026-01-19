@@ -1,3 +1,4 @@
+import { fmtYYYYMMDD } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -10,13 +11,6 @@ import {
     TextInput,
     View,
 } from "react-native";
-
-function fmtYYYYMMDD(d: Date) {
-  const yy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yy}-${mm}-${dd}`;
-}
 
 type RecipeDetail = {
   id: string;
