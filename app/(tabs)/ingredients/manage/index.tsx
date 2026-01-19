@@ -1,4 +1,5 @@
 import { setIngredientDetails } from "@/api/ingredients";
+import QueryErrorView from "@/components/QueryErrorView";
 import { colors } from "@/constants";
 import useCreateIngredient from "@/hooks/useCreateIngredient";
 import useGetIngredients from "@/hooks/useGetIngredients";
@@ -6,7 +7,6 @@ import { StorageType } from "@/types";
 import { getSecureStore } from "@/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -141,41 +141,12 @@ export default function IngredientsManagePage() {
   };
 
   if (error) {
-    const isUnauthorized =
-      (error as any)?.response?.status === 401 ||
-      (error as any)?.status === 401;
-
-    // 토큰이 있는데 401이면 토큰 문제이므로 "로그인하러 가기" 버튼 표시 안 함
-    const showLoginButton = isUnauthorized && !hasToken;
-    const showRetryButton = !isUnauthorized;
-
     return (
-      <View style={styles.errorContainer}>
-        <Ionicons name="lock-closed-outline" size={48} color="#c1121f" />
-        <Text style={styles.errorText}>
-          {isUnauthorized
-            ? hasToken
-              ? "인증에 실패했습니다. 다시 로그인해주세요."
-              : "로그인이 필요합니다"
-            : "데이터를 불러오는데 실패했습니다."}
-        </Text>
-        {showLoginButton && (
-          <Pressable
-            style={styles.loginBtn}
-            onPress={() => router.replace("/auth")}
-          >
-            <Text style={styles.loginBtnText}>로그인하러 가기</Text>
-          </Pressable>
-        )}
-        {showRetryButton && (
-          <Pressable
-            style={styles.retryBtn}
-            onPress={() => refetch()}
-          >
-            <Text style={styles.retryBtnText}>다시시도하기</Text>
-          </Pressable>
-        )}
-      </View>
+      <QueryErrorView
+        error={error}
+        hasToken={hasToken}
+        onRetry={refetch}
+      />
     );
   }
 
@@ -391,32 +362,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    gap: 16,
-  },
-  errorText: { color: "#c1121f", fontSize: 14, textAlign: "center" },
-  loginBtn: {
-    marginTop: 8,
-    backgroundColor: colors.BLACK,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  loginBtnText: { color: "#fff", fontWeight: "900", fontSize: 14 },
-  retryBtn: {
-    marginTop: 8,
-    backgroundColor: colors.BLACK,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  retryBtnText: { color: "#fff", fontWeight: "900", fontSize: 14 },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",

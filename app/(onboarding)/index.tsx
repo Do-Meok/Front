@@ -1,6 +1,8 @@
 import Dots from "@/components/Dot";
 import FoodThingLogo from "@/components/FoodThingLogo";
 import { colors } from "@/constants";
+import { useNavigationContext } from "@/providers/NavigationProvider";
+import { getSecureStore } from "@/utils/secureStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
@@ -45,21 +47,47 @@ const SLIDES: Slide[] = [
 export default function Onboarding() {
   const listRef = useRef<FlatList<Slide>>(null);
   const [index, setIndex] = useState(0);
+  const { checkAuthState, setOnboardingCompleted } = useNavigationContext();
 
   const isLast = useMemo(() => index >= SLIDES.length - 1, [index]);
 
   const onPressSkip = async () => {
     // 로컬 스토리지에 온보딩 완료 저장
     await AsyncStorage.setItem("onboarding_completed", "true");
-    // auth 페이지로 이동 (애니메이션 없이)
-    router.replace("/auth?from=skip");
+    // 상태를 즉시 업데이트 (NavigationProvider가 감지하도록)
+    setOnboardingCompleted(true);
+    // 인증 상태 재확인
+    await checkAuthState();
+    
+    // 토큰 확인 (상태 업데이트를 기다리기 위해 직접 확인)
+    const token = await getSecureStore("accessToken");
+    
+    // 로그인되어 있으면 홈으로, 아니면 auth로 이동
+    if (token) {
+      router.replace("/(tabs)");
+    } else {
+      router.replace("/auth?from=skip");
+    }
   };
 
   const onPressNext = async () => {
     if (index >= SLIDES.length - 1) {
-      // 마지막 슬라이드에서 다음을 누르면 auth 페이지로 이동 (애니메이션과 함께)
+      // 마지막 슬라이드에서 다음을 누르면 온보딩 완료 처리
       await AsyncStorage.setItem("onboarding_completed", "true");
-      router.replace("/auth?from=onboarding");
+      // 상태를 즉시 업데이트 (NavigationProvider가 감지하도록)
+      setOnboardingCompleted(true);
+      // 인증 상태 재확인
+      await checkAuthState();
+      
+      // 토큰 확인 (상태 업데이트를 기다리기 위해 직접 확인)
+      const token = await getSecureStore("accessToken");
+      
+      // 로그인되어 있으면 홈으로, 아니면 auth로 이동
+      if (token) {
+        router.replace("/(tabs)");
+      } else {
+        router.replace("/auth?from=onboarding");
+      }
       return;
     }
     const next = index + 1;
