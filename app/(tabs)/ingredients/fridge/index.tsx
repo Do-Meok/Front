@@ -1,3 +1,4 @@
+import PageHeader from "@/components/PageHeader";
 import { colors } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
@@ -45,12 +46,7 @@ export default function FridgeManagePage() {
 
   return (
     <View style={styles.page}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>냉장고 관리</Text>
-        <Pressable onPress={() => setOpen(true)} style={styles.headerPlus}>
-          <Ionicons name="add" size={22} color={colors.BLACK} />
-        </Pressable>
-      </View>
+      <PageHeader title="냉장고 관리" />
 
       <FlatList
         data={items}
@@ -115,18 +111,6 @@ export default function FridgeManagePage() {
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: "#fff", padding: 16 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  headerTitle: { fontSize: 20, fontWeight: "700" },
-  headerPlus: {
-    padding: 8,
-    borderWidth: 1,
-    borderColor: colors.BORDER,
-    borderRadius: 10,
-  },
 
   card: {
     borderWidth: 1,

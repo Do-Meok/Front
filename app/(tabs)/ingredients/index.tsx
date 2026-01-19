@@ -1,5 +1,6 @@
 import AddIngredientModal from "@/components/AddIngredientModal";
 import EditIngredientModal from "@/components/EditIngredientModal";
+import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
 import useDeleteIngredient from "@/hooks/useDeleteIngredient";
 import useGetIngredients from "@/hooks/useGetIngredients";
@@ -116,10 +117,7 @@ export default function IngredientsScreen() {
   return (
     <View style={styles.page}>
       {/* 상단 제목 */}
-      <View style={styles.top}>
-        <Text style={styles.title}>재료</Text>
-        <Text style={styles.sub}>식재료 공유</Text>
-      </View>
+      <PageHeader title="재료" />
 
       {/* 필터 탭 */}
       <View style={styles.filterRow}>
@@ -252,13 +250,6 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
 
-  top: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  title: { fontSize: 20, fontWeight: "800" },
-  sub: { fontSize: 12, color: "#666" },
 
   filterRow: { flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" },
   filterPill: {

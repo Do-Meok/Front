@@ -1,3 +1,4 @@
+import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
 import { colors } from "@/constants";
 import useCreateIngredient from "@/hooks/useCreateIngredient";
@@ -133,15 +134,7 @@ export default function IngredientsManagePage() {
   return (
     <View style={styles.page}>
       {/* 상단 헤더 영역 */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>재료 관리</Text>
-        <Pressable
-          onPress={() => setAddModalOpen(true)}
-          style={styles.headerPlus}
-        >
-          <Ionicons name="add" size={22} color={colors.BLACK} />
-        </Pressable>
-      </View>
+      <PageHeader title="재료 관리" />
 
       {/* 세그먼트 탭 */}
       <View style={styles.segment}>
@@ -309,18 +302,6 @@ export default function IngredientsManagePage() {
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: "#fff", padding: 16 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  headerTitle: { fontSize: 20, fontWeight: "700" },
-  headerPlus: {
-    padding: 8,
-    borderWidth: 1,
-    borderColor: colors.BORDER,
-    borderRadius: 10,
-  },
 
   segment: {
     marginTop: 12,
