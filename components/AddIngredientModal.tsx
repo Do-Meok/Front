@@ -1,7 +1,6 @@
 import useCreateIngredient from "@/hooks/useCreateIngredient";
 import useUpdateIngredient from "@/hooks/useUpdateIngredient";
-import { StorageType } from "@/types";
-import { addDays, fmtYYYYMMDD } from "@/utils/date";
+import { fromKoreanStorageType } from "@/utils/storageType";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
@@ -24,21 +23,20 @@ export default function AddIngredientModal({
   visible,
   onClose,
 }: AddIngredientModalProps) {
-  const [buyDate, setBuyDate] = useState(fmtYYYYMMDD(new Date()));
+  const [buyDate, setBuyDate] = useState("");
   const [name, setName] = useState("");
-  const [addStorageType, setAddStorageType] = useState<StorageType | "">("");
+  const [addStorageType, setAddStorageType] = useState<string>("");
   const [addExpirationDate, setAddExpirationDate] = useState("");
 
   const addMutation = useCreateIngredient();
-  const updateMutation = useUpdateIngredient();
+  const updateMutation = useUpdateIngredient({ showAlert: false });
 
   const handleAdd = async () => {
     if (!name.trim()) {
       Alert.alert("알림", "식재료명을 입력해주세요.");
       return;
     }
-    // 날짜가 없으면 오늘 날짜로 설정
-    const purchaseDate = buyDate.trim() || fmtYYYYMMDD(new Date());
+    const purchaseDate = buyDate.trim();
 
     try {
       const data = await addMutation.mutateAsync({
@@ -49,26 +47,33 @@ export default function AddIngredientModal({
       // 추가된 식재료가 있고, 스토리지 타입이나 유통기한이 설정되어 있으면 상세 정보 설정
       if (data && data.length > 0 && (addStorageType || addExpirationDate)) {
         const ingredientId = data[0].id;
-        // 스토리지 타입과 유통기한 둘 다 필수이므로, 하나만 있으면 다른 하나는 기본값 사용
-        const storageType = addStorageType || "냉장"; // 기본값
-        const expirationDate =
-          addExpirationDate || addDays(fmtYYYYMMDD(new Date()), 7); // 기본값: 7일 후
+        const updateData: any = {};
+        
+        if (addStorageType) {
+          const storageType = fromKoreanStorageType(addStorageType);
+          if (storageType) updateData.storage_type = storageType;
+        }
+        
+        if (addExpirationDate) {
+          updateData.expiration_date = addExpirationDate;
+        }
 
         // updateMutation을 사용하여 상세 정보 설정
-        await updateMutation.mutateAsync({
-          ingredientId,
-          data: {
-            storage_type: storageType as StorageType,
-            expiration_date: expirationDate,
-          },
-        });
+        if (Object.keys(updateData).length > 0) {
+          // updateMutation 호출 (alert는 표시하지 않음, 추가 성공 alert만 표시)
+          await updateMutation.mutateAsync({
+            ingredientId,
+            data: updateData,
+          });
+        }
       }
 
       setName("");
-      setBuyDate(fmtYYYYMMDD(new Date()));
+      setBuyDate("");
       setAddStorageType("");
       setAddExpirationDate("");
       onClose();
+      // 성공 알림은 hook에서 처리됨
     } catch {
       // 에러는 hook에서 처리됨
     }
@@ -103,7 +108,7 @@ export default function AddIngredientModal({
             <Ionicons name="calendar-outline" size={18} color="#111" />
           </View>
         </View>
-        <Text style={styles.helper}>YYYY-MM-DD 형식 / 값이 없으면 오늘</Text>
+        <Text style={styles.helper}>YYYY-MM-DD 형식 (선택사항)</Text>
 
         <Text style={[styles.inputLabel, { marginTop: 12 }]}>식재료명</Text>
         <View style={styles.inputRow}>
@@ -128,12 +133,12 @@ export default function AddIngredientModal({
           style={styles.input}
         />
         <Text style={styles.helper}>
-          유통기한을 입력하세요. 입력하지 않으면 기본값(7일 후)이 설정됩니다.
+          유통기한을 입력하세요. (선택사항)
         </Text>
 
         <Text style={[styles.inputLabel, { marginTop: 12 }]}>보관장소</Text>
         <View style={styles.storageRow}>
-          {(["냉장", "냉동", "실온"] as StorageType[]).map((s) => (
+          {(["냉장", "냉동", "실온"] as const).map((s) => (
             <Pressable
               key={s}
               onPress={() => setAddStorageType(addStorageType === s ? "" : s)}
@@ -154,7 +159,7 @@ export default function AddIngredientModal({
           ))}
         </View>
         <Text style={styles.helper}>
-          보관장소를 선택하세요. 선택하지 않으면 기본값(냉장)이 설정됩니다.
+          보관장소를 선택하세요. (선택사항)
         </Text>
 
         <Pressable

@@ -3,9 +3,9 @@ import { colors } from "@/constants";
 import useCreateIngredient from "@/hooks/useCreateIngredient";
 import useGetIngredients from "@/hooks/useGetIngredients";
 import useUpdateIngredient from "@/hooks/useUpdateIngredient";
-import { StorageType } from "@/types";
 import { addDays, fmtYYYYMMDD } from "@/utils/date";
 import { getSecureStore } from "@/utils/secureStore";
+import { fromKoreanStorageType } from "@/utils/storageType";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -42,10 +42,24 @@ export default function IngredientsManagePage() {
     refetch,
   } = useGetIngredients();
 
-  // 보관 데이터가 없는 식재료 필터링
-  const unclassifiedItems = useMemo(() => {
+  // 유통기한이 없는 식재료 (유통기한 입력 모드용)
+  const expiryItems = useMemo(() => {
+    return allItems.filter((item) => !item.expiration_date);
+  }, [allItems]);
+
+  // 스토리지가 없는 식재료 (냉장고 상태 입력 모드용)
+  const statusItems = useMemo(() => {
     return allItems.filter((item) => !item.storage_type);
   }, [allItems]);
+
+  // 현재 모드에 따라 필터링
+  const unclassifiedItems = useMemo(() => {
+    if (mode === "expiry") {
+      return expiryItems;
+    } else {
+      return statusItems;
+    }
+  }, [mode, expiryItems, statusItems]);
 
   // 식재료 추가
   const addMutation = useCreateIngredient();
@@ -53,34 +67,35 @@ export default function IngredientsManagePage() {
   // 식재료 수정 (유통기한 및 보관장소 설정)
   const updateMutation = useUpdateIngredient();
 
-  const title =
-    mode === "expiry" ? "유통기한 입력" : "냉장고 상태 입력";
+  const title = mode === "expiry" 
+    ? `유통기한 입력(${expiryItems.length})` 
+    : `냉장고 상태 입력(${statusItems.length})`;
 
   const handleSetExpiration = (ingredientId: number, days: number) => {
     const expirationDate = addDays(fmtYYYYMMDD(new Date()), days);
-    // 기본 보관장소는 냉장으로 설정
+    // 유통기한만 수정, 스토리지는 노터치
     updateMutation.mutate({
       ingredientId,
       data: {
         expiration_date: expirationDate,
-        storage_type: "냉장",
       },
     });
   };
 
   const handleSetStorage = (
     ingredientId: number,
-    storageType: StorageType
+    storageTypeKorean: string
   ) => {
-    // 유통기한은 구입일 기준 7일로 설정 (또는 사용자 입력 필요)
-    const expirationDate = addDays(fmtYYYYMMDD(new Date()), 7);
-    updateMutation.mutate({
-      ingredientId,
-      data: {
-        expiration_date: expirationDate,
-        storage_type: storageType,
-      },
-    });
+    // 스토리지만 수정, 유통기한은 노터치
+    const storageType = fromKoreanStorageType(storageTypeKorean);
+    if (storageType) {
+      updateMutation.mutate({
+        ingredientId,
+        data: {
+          storage_type: storageType,
+        },
+      });
+    }
   };
 
   const handleAdd = () => {
@@ -137,7 +152,7 @@ export default function IngredientsManagePage() {
           <Text
             style={[styles.segText, mode === "expiry" && styles.segTextActive]}
           >
-            유통기한 입력
+            유통기한 입력({expiryItems.length})
           </Text>
         </Pressable>
         <Pressable
@@ -147,7 +162,7 @@ export default function IngredientsManagePage() {
           <Text
             style={[styles.segText, mode === "status" && styles.segTextActive]}
           >
-            냉장고 상태 입력
+            냉장고 상태 입력({statusItems.length})
           </Text>
         </Pressable>
       </View>
@@ -214,7 +229,7 @@ export default function IngredientsManagePage() {
                 ) : (
                   /* 냉장고 상태 입력 모드 */
                   <View style={styles.chips}>
-                    {(["냉장", "냉동", "실온"] as StorageType[]).map((s) => (
+                    {(["냉장", "냉동", "실온"] as const).map((s) => (
                       <Pressable
                         key={s}
                         onPress={() => handleSetStorage(item.id, s)}

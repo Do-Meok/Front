@@ -1,30 +1,30 @@
-import { StorageType, StorageTypeBackend } from "@/types";
+import { StorageType } from "@/types";
 
 /**
- * 한국어 보관장소 타입을 백엔드 Enum 형식으로 변환
+ * StorageType을 한국어로 변환 (UI 표시용)
  */
-export function toBackendStorageType(
-  storageType: StorageType
-): StorageTypeBackend {
-  const mapping: Record<StorageType, StorageTypeBackend> = {
-    냉장: "FRIDGE",
-    냉동: "FREEZER",
-    실온: "ROOM",
-  };
-  return mapping[storageType];
-}
-
-/**
- * 백엔드 Enum 형식을 한국어 보관장소 타입으로 변환
- */
-export function fromBackendStorageType(
-  storageType: StorageTypeBackend | null | undefined
-): StorageType | null {
-  if (!storageType) return null;
-  const mapping: Record<StorageTypeBackend, StorageType> = {
+export function toKoreanStorageType(
+  storageType: StorageType | null | undefined
+): string {
+  if (!storageType) return "미설정";
+  const mapping: Record<StorageType, string> = {
     FRIDGE: "냉장",
     FREEZER: "냉동",
     ROOM: "실온",
   };
   return mapping[storageType];
+}
+
+/**
+ * 한국어를 StorageType으로 변환
+ */
+export function fromKoreanStorageType(
+  korean: string
+): StorageType | null {
+  const mapping: Record<string, StorageType> = {
+    냉장: "FRIDGE",
+    냉동: "FREEZER",
+    실온: "ROOM",
+  };
+  return mapping[korean] || null;
 }

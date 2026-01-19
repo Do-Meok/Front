@@ -4,7 +4,8 @@ import { UpdateIngredientRequest } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import { Alert } from "react-native";
 
-function useUpdateIngredient() {
+function useUpdateIngredient(options?: { showAlert?: boolean }) {
+  const showAlert = options?.showAlert !== false; // 기본값은 true
   return useMutation({
     mutationFn: ({
       ingredientId,
@@ -15,7 +16,9 @@ function useUpdateIngredient() {
     }) => updateIngredient(ingredientId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredients"] });
-      Alert.alert("성공", "식재료가 수정되었습니다.");
+      if (showAlert) {
+        Alert.alert("성공", "식재료가 수정되었습니다.");
+      }
     },
     onError: (error: any) => {
       const errorMessage =

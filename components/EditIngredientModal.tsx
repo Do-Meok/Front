@@ -1,6 +1,6 @@
 import useUpdateIngredient from "@/hooks/useUpdateIngredient";
-import { GetIngredientResponse, StorageType } from "@/types";
-import { toBackendStorageType } from "@/utils/storageType";
+import { GetIngredientResponse } from "@/types";
+import { fromKoreanStorageType, toKoreanStorageType } from "@/utils/storageType";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
@@ -26,7 +26,7 @@ export default function EditIngredientModal({
 }: EditIngredientModalProps) {
   const [editName, setEditName] = useState("");
   const [editExpirationDate, setEditExpirationDate] = useState("");
-  const [editStorageType, setEditStorageType] = useState<StorageType | "">("");
+  const [editStorageType, setEditStorageType] = useState<string>("");
 
   const updateMutation = useUpdateIngredient();
 
@@ -34,7 +34,9 @@ export default function EditIngredientModal({
     if (ingredient) {
       setEditName(ingredient.ingredient_name);
       setEditExpirationDate(ingredient.expiration_date || "");
-      setEditStorageType(ingredient.storage_type || "");
+      setEditStorageType(
+        ingredient.storage_type ? toKoreanStorageType(ingredient.storage_type) : ""
+      );
     }
   }, [ingredient]);
 
@@ -43,10 +45,10 @@ export default function EditIngredientModal({
 
     const updateData: any = {};
     if (editExpirationDate) updateData.expiration_date = editExpirationDate;
-    if (editStorageType)
-      updateData.storage_type = toBackendStorageType(
-        editStorageType as StorageType
-      );
+    if (editStorageType) {
+      const storageType = fromKoreanStorageType(editStorageType);
+      if (storageType) updateData.storage_type = storageType;
+    }
 
     updateMutation.mutate(
       {
@@ -100,7 +102,7 @@ export default function EditIngredientModal({
 
         <Text style={[styles.inputLabel, { marginTop: 12 }]}>보관장소</Text>
         <View style={styles.storageRow}>
-          {(["냉장", "냉동", "실온"] as StorageType[]).map((s) => (
+          {(["냉장", "냉동", "실온"] as const).map((s) => (
             <Pressable
               key={s}
               onPress={() => setEditStorageType(editStorageType === s ? "" : s)}

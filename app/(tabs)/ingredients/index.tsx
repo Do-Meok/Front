@@ -6,6 +6,7 @@ import useGetIngredients from "@/hooks/useGetIngredients";
 import { GetIngredientResponse, StorageType } from "@/types";
 import { daysLeft } from "@/utils/date";
 import { getSecureStore } from "@/utils/secureStore";
+import { fromKoreanStorageType, toKoreanStorageType } from "@/utils/storageType";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -19,7 +20,7 @@ import {
   View,
 } from "react-native";
 
-type Filter = "전체" | "미분류" | StorageType;
+type Filter = "전체" | "미분류" | StorageType | "냉장" | "냉동" | "실온";
 
 function iconByName(name: string) {
   if (!name) return "nutrition-outline";
@@ -66,8 +67,11 @@ export default function IngredientsScreen() {
       // storage_type이 null인 경우
       filtered = filtered.filter((item) => !item.storage_type);
     } else if (filter !== "전체") {
-      // 냉장, 냉동, 실온 필터
-      filtered = filtered.filter((item) => item.storage_type === filter);
+      // 한국어 필터를 StorageType으로 변환
+      const storageType = fromKoreanStorageType(filter);
+      if (storageType) {
+        filtered = filtered.filter((item) => item.storage_type === storageType);
+      }
     }
     
     // 유통기한 순으로 정렬
@@ -94,6 +98,7 @@ export default function IngredientsScreen() {
   };
 
   const handleEdit = (item: GetIngredientResponse) => {
+    setAddModalOpen(false);
     setSelectedIngredient(item);
     setEditModalOpen(true);
   };
@@ -156,7 +161,7 @@ export default function IngredientsScreen() {
                 ? `D-${d}`
                 : `D+${Math.abs(d)}`
               : "미설정";
-            const storageText = item.storage_type || "미설정";
+            const storageText = toKoreanStorageType(item.storage_type);
 
             return (
               <View style={styles.card}>
@@ -208,7 +213,14 @@ export default function IngredientsScreen() {
       )}
 
       {/* + 버튼 */}
-      <Pressable style={styles.fab} onPress={() => setAddModalOpen(true)}>
+      <Pressable
+        style={styles.fab}
+        onPress={() => {
+          setEditModalOpen(false);
+          setSelectedIngredient(null);
+          setAddModalOpen(true);
+        }}
+      >
         <Ionicons name="add" size={28} color="#111" />
       </Pressable>
 
@@ -223,6 +235,7 @@ export default function IngredientsScreen() {
         visible={editModalOpen}
         ingredient={selectedIngredient}
         onClose={() => {
+          setAddModalOpen(false);
           setEditModalOpen(false);
           setSelectedIngredient(null);
         }}
