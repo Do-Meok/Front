@@ -1,3 +1,4 @@
+import DateInputWithCalendar from "@/components/DateInputWithCalendar";
 import useCreateIngredient from "@/hooks/useCreateIngredient";
 import useUpdateIngredient from "@/hooks/useUpdateIngredient";
 import { fromKoreanStorageType } from "@/utils/storageType";
@@ -96,19 +97,13 @@ export default function AddIngredientModal({
           <View style={{ width: 32 }} />
         </View>
 
-        <Text style={styles.inputLabel}>구입날짜</Text>
-        <View style={styles.inputRow}>
-          <TextInput
-            value={buyDate}
-            onChangeText={setBuyDate}
-            placeholder="YYYY-MM-DD"
-            style={[styles.input, { flex: 1 }]}
-          />
-          <View style={styles.calIcon}>
-            <Ionicons name="calendar-outline" size={18} color="#111" />
-          </View>
-        </View>
-        <Text style={styles.helper}>YYYY-MM-DD 형식 (선택사항)</Text>
+        <DateInputWithCalendar
+          label="구입날짜"
+          value={buyDate}
+          onChangeText={setBuyDate}
+          placeholder="YYYY-MM-DD"
+          helperText="YYYY-MM-DD 형식 (선택사항)"
+        />
 
         <Text style={[styles.inputLabel, { marginTop: 12 }]}>식재료명</Text>
         <View style={styles.inputRow}>
@@ -118,42 +113,36 @@ export default function AddIngredientModal({
             placeholder="예) 소고기"
             style={[styles.input, { flex: 1 }]}
           />
-          <Pressable style={styles.plusMini} onPress={handleAdd}>
-            <Ionicons name="add" size={18} color="#111" />
-          </Pressable>
         </View>
 
-        <Text style={[styles.inputLabel, { marginTop: 12 }]}>
-          유통기한 (YYYY-MM-DD)
-        </Text>
-        <TextInput
-          value={addExpirationDate}
-          onChangeText={setAddExpirationDate}
-          placeholder="YYYY-MM-DD (선택사항)"
-          style={styles.input}
-        />
-        <Text style={styles.helper}>
-          유통기한을 입력하세요. (선택사항)
-        </Text>
+        <View style={{ marginTop: 12 }}>
+          <DateInputWithCalendar
+            label="유통기한 (YYYY-MM-DD)"
+            value={addExpirationDate}
+            onChangeText={setAddExpirationDate}
+            placeholder="YYYY-MM-DD (선택사항)"
+            helperText="유통기한을 입력하세요. (선택사항)"
+          />
+        </View>
 
         <Text style={[styles.inputLabel, { marginTop: 12 }]}>보관장소</Text>
         <View style={styles.storageRow}>
-          {(["냉장", "냉동", "실온"] as const).map((s) => (
+          {(["냉장", "냉동", "실온"] as const).map((storageOption) => (
             <Pressable
-              key={s}
-              onPress={() => setAddStorageType(addStorageType === s ? "" : s)}
+              key={storageOption}
+              onPress={() => setAddStorageType(addStorageType === storageOption ? "" : storageOption)}
               style={[
                 styles.storageBtn,
-                addStorageType === s && styles.storageBtnActive,
+                addStorageType === storageOption && styles.storageBtnActive,
               ]}
             >
               <Text
                 style={[
                   styles.storageBtnText,
-                  addStorageType === s && styles.storageBtnTextActive,
+                  addStorageType === storageOption && styles.storageBtnTextActive,
                 ]}
               >
-                {s}
+                {storageOption}
               </Text>
             </Pressable>
           ))}
@@ -221,15 +210,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
-  },
-  calIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e6e6e6",
-    alignItems: "center",
-    justifyContent: "center",
   },
   helper: { marginTop: 6, fontSize: 11, color: "#888" },
   plusMini: {

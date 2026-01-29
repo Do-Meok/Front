@@ -1,3 +1,4 @@
+import DateInputWithCalendar from "@/components/DateInputWithCalendar";
 import useUpdateIngredient from "@/hooks/useUpdateIngredient";
 import { GetIngredientResponse } from "@/types";
 import { fromKoreanStorageType, toKoreanStorageType } from "@/utils/storageType";
@@ -87,18 +88,15 @@ export default function EditIngredientModal({
           style={[styles.input, { backgroundColor: "#f5f5f5" }]}
         />
 
-        <Text style={[styles.inputLabel, { marginTop: 12 }]}>
-          유통기한 (YYYY-MM-DD)
-        </Text>
-        <TextInput
-          value={editExpirationDate}
-          onChangeText={setEditExpirationDate}
-          placeholder="YYYY-MM-DD"
-          style={styles.input}
-        />
-        <Text style={styles.helper}>
-          유통기한을 수정하려면 입력하세요. 빈 값으로 두면 기존 값이 유지됩니다.
-        </Text>
+        <View style={{ marginTop: 12 }}>
+          <DateInputWithCalendar
+            label="유통기한 (YYYY-MM-DD)"
+            value={editExpirationDate}
+            onChangeText={setEditExpirationDate}
+            placeholder="YYYY-MM-DD"
+            helperText="유통기한을 수정하려면 입력하세요. 빈 값으로 두면 기존 값이 유지됩니다."
+          />
+        </View>
 
         <Text style={[styles.inputLabel, { marginTop: 12 }]}>보관장소</Text>
         <View style={styles.storageRow}>

@@ -1,4 +1,20 @@
 /**
+ * 사용자 입력(숫자만, "-", 띄워쓰기 혼합)을 YYYY-MM-DD 형식으로 정규화
+ * 예: "20250129" -> "2025-01-29", "2025 01 29" -> "2025-01-29"
+ */
+export function formatInputToYYYYMMDD(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  if (digits.length === 0) return "";
+  const y = digits.slice(0, 4);
+  const m = digits.length >= 6 ? digits.slice(4, 6) : digits.slice(4);
+  const d = digits.length >= 8 ? digits.slice(6, 8) : "";
+  const parts = [y];
+  if (m) parts.push(m);
+  if (d) parts.push(d);
+  return parts.join("-");
+}
+
+/**
  * Date를 YYYY-MM-DD 형식의 문자열로 변환
  */
 export function fmtYYYYMMDD(d: Date): string {

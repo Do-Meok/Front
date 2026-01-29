@@ -151,7 +151,7 @@ export default function IngredientsScreen() {
         <FlatList
           data={sortedItems}
           keyExtractor={(x) => String(x.id)}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 10 }}
           renderItem={({ item }) => {
             const d = daysLeft(item.expiration_date);
             const dText = d !== null
