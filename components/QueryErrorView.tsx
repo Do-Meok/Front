@@ -1,4 +1,3 @@
-import { colors } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
@@ -43,7 +42,7 @@ export default function QueryErrorView({
 
   return (
     <View style={styles.errorContainer}>
-      <Ionicons name="lock-closed-outline" size={48} color="#c1121f" />
+      <Ionicons name="lock-closed-outline" size={48} color="#666" />
       <Text style={styles.errorText}>{message}</Text>
       {showLoginButton && (
         <Pressable style={styles.loginBtn} onPress={onLogin}>
@@ -67,23 +66,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     gap: 16,
   },
-  errorText: { color: "#c1121f", fontSize: 14, textAlign: "center" },
+  errorText: { color: "#555", fontSize: 14, textAlign: "center" },
   loginBtn: {
     marginTop: 8,
-    backgroundColor: colors.BLACK,
+    backgroundColor: "#111",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: "center",
   },
-  loginBtnText: { color: "#fff", fontWeight: "900", fontSize: 14 },
+  loginBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   retryBtn: {
     marginTop: 8,
-    backgroundColor: colors.BLACK,
+    backgroundColor: "#111",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: "center",
   },
-  retryBtnText: { color: "#fff", fontWeight: "900", fontSize: 14 },
+  retryBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });
