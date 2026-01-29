@@ -18,11 +18,10 @@ async function addShoppingList(body:ShoppingListRequest): Promise<ShoppingListRe
     return data;
 }
 
-// 쇼핑 리스트 삭제
-async function deleteShoppingList(shopping_id?:number) : Promise<void> {
-    await axiosInstance.delete(`${PREFIX}/shopping`, {
-        params: {shopping_id: shopping_id},
-    });
+// 쇼핑 리스트 삭제 (경로 파라미터: DELETE /shopping/{id})
+async function deleteShoppingList(shoppingId: number): Promise<void> {
+    await axiosInstance.delete(`${PREFIX}/shopping/${shoppingId}`);
 }
 
 export { addShoppingList, deleteShoppingList, getShoppingList };
+
