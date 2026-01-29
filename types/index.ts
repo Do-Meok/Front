@@ -62,3 +62,12 @@ export type InfoResponse = {
   birth: string | null;
   phone_num: string | null;
 };
+
+export type ShoppingListResponse = {
+  id: number;
+  item_name: string;
+}
+
+export type ShoppingListRequest = {
+  item_name: string;
+}

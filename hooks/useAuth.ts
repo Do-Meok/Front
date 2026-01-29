@@ -89,5 +89,4 @@ function useAuth() {
   };
 }
 
-export { useUserInfo };
 export default useAuth;

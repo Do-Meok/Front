@@ -1,5 +1,6 @@
 import { deleteIngredient } from "@/api/ingredients";
 import queryClient from "@/api/queryClient";
+import { queryKey } from "@/constants";
 import { useMutation } from "@tanstack/react-query";
 import { Alert } from "react-native";
 
@@ -7,7 +8,7 @@ function useDeleteIngredient() {
   return useMutation({
     mutationFn: deleteIngredient,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ingredients"] });
+      queryClient.invalidateQueries({ queryKey: [queryKey.INGREDIENTS] });
       Alert.alert("성공", "식재료가 삭제되었습니다.");
     },
     onError: (error: any) => {

@@ -1,5 +1,6 @@
 import { updateIngredient } from "@/api/ingredients";
 import queryClient from "@/api/queryClient";
+import { queryKey } from "@/constants";
 import { UpdateIngredientRequest } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import { Alert } from "react-native";
@@ -15,7 +16,7 @@ function useUpdateIngredient(options?: { showAlert?: boolean }) {
       data: UpdateIngredientRequest;
     }) => updateIngredient(ingredientId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ingredients"] });
+      queryClient.invalidateQueries({ queryKey: [queryKey.INGREDIENTS] });
       if (showAlert) {
         Alert.alert("성공", "식재료가 수정되었습니다.");
       }

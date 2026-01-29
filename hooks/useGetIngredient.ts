@@ -1,10 +1,11 @@
 import { getIngredient } from "@/api/ingredients";
+import { queryKey } from "@/constants";
 import { useQuery } from "@tanstack/react-query";
 
 function useGetIngredient(ingredientId: number) {
   return useQuery({
     queryFn: () => getIngredient(ingredientId),
-    queryKey: ["ingredients", "detail", ingredientId],
+    queryKey: [queryKey.INGREDIENTS, "detail", ingredientId],
     enabled: !!ingredientId,
   });
 }

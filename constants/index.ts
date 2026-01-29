@@ -13,7 +13,9 @@ const colors = {
 const queryKey = {
   AUTH: "auth",
   GET_ME: "getMe",
-  INGREDIENTS: "ingredients"
+  INGREDIENTS: "ingredients",
+  SHOPPING: "shopping",
+  GET_SHOPPING: "get_shopping"
 };
 
 export { colors, queryKey };

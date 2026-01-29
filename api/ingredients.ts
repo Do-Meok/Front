@@ -31,6 +31,7 @@ async function addIngredient(
     `${PREFIX}/ingredients`,
     body
   );
+  
   return data;
 }
 
@@ -43,6 +44,7 @@ async function setIngredientDetails(
     `${PREFIX}/ingredients/${ingredientId}`,
     body
   );
+  
   return data;
 }
 
@@ -55,6 +57,7 @@ async function getIngredients(params?: {
     `${PREFIX}/ingredients`,
     { params }
   );
+  
   return data;
 }
 
@@ -66,6 +69,7 @@ async function getIngredient(
     `${PREFIX}/ingredients/detail`,
     { params: { ingredient_id: ingredientId } }
   );
+  
   return data;
 }
 
@@ -85,6 +89,7 @@ async function updateIngredient(
     `${PREFIX}/ingredients/update/${ingredientId}`,
     body
   );
+  
   return data;
 }
 
