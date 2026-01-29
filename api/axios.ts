@@ -1,7 +1,7 @@
 import { getSecureStore } from "@/utils/secureStore";
 import axios from "axios";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "https://domeok.augustzero.duckdns.org";
 
 if (!API_URL) {
   throw new Error(

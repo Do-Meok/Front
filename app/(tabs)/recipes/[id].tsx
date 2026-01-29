@@ -1,15 +1,16 @@
+import PageHeader from "@/components/PageHeader";
 import { fmtYYYYMMDD } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 type RecipeDetail = {
@@ -85,16 +86,19 @@ export default function RecipeDetailScreen() {
 
   return (
     <View style={styles.page}>
-      {/* 상단 바 */}
-      <View style={styles.topbar}>
-        <Pressable onPress={() => router.back()} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={22} color="#111" />
-        </Pressable>
-        <Text style={styles.topTitle}>레시피 상세</Text>
-        <Pressable onPress={() => {}} style={styles.iconBtn}>
-          <Ionicons name="share-social-outline" size={20} color="#111" />
-        </Pressable>
-      </View>
+      <PageHeader
+        title="레시피 상세"
+        leftChild={
+          <Pressable onPress={() => router.back()} style={styles.iconBtn}>
+            <Ionicons name="arrow-back" size={22} color="#111" />
+          </Pressable>
+        }
+        rightChild={
+          <Pressable onPress={() => {}} style={styles.iconBtn}>
+            <Ionicons name="share-social-outline" size={20} color="#111" />
+          </Pressable>
+        }
+      />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         {/* 헤더 카드 */}
@@ -211,12 +215,6 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
 
-  topbar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  topTitle: { fontSize: 14, fontWeight: "900", color: "#111" },
   iconBtn: {
     width: 36,
     height: 36,

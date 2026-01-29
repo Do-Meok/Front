@@ -1,4 +1,5 @@
 import FeaturedRecipeCarousel from "@/components/FeaturedRecipeCarousel";
+import PageHeader from "@/components/PageHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -83,10 +84,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
 
   return (
     <View style={styles.page}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-      </View>
+      <PageHeader title={title} />
 
       {/* 요리 기록은 검색/목록 대신 빈 상태만 */}
       {mode === "log" ? (
@@ -143,13 +141,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 14,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  title: { fontSize: 20, fontWeight: "800" },
-
   search: {
     marginTop: 10,
     flexDirection: "row",
