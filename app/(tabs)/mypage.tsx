@@ -1,11 +1,8 @@
-import { getUserInfo } from "@/api/auth";
-import QueryErrorView from "@/components/QueryErrorView";
 import { colors } from "@/constants";
-import { getSecureStore } from "@/utils/secureStore";
+import useAuth from "@/hooks/useAuth";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -15,27 +12,30 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+function renderHeader() {
+  return (
+    <View style={styles.header}>
+      <Pressable
+        onPress={() => router.back()}
+        style={styles.backBtn}
+        hitSlop={12}
+      >
+        <Ionicons name="chevron-back" size={28} color="#111" />
+      </Pressable>
+      <Text style={styles.headerTitle}>마이페이지</Text>
+      <View style={{ width: 40 }} />
+    </View>
+  );
+}
+
 export default function MyPageScreen() {
-  const [hasToken, setHasToken] = useState(false);
+  const { userInfoQuery } = useAuth();
+  const { data: userInfo, isLoading, error, refetch, isRefetching } = userInfoQuery;
 
-  useEffect(() => {
-    // 토큰 존재 여부 확인
-    getSecureStore("accessToken").then((token) => {
-      setHasToken(!!token);
-    });
-  }, []);
+  const isUnauthorized = error && (error as any)?.response?.status === 401;
 
-  const {
-    data: userInfo,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ["userInfo"],
-    queryFn: getUserInfo,
-  });
-
-  if (isLoading) {
+  // 로딩 중
+  if (isLoading && !userInfo) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -45,32 +45,55 @@ export default function MyPageScreen() {
     );
   }
 
-  if (error) {
+  // 로그인 안 됨 (401) → 로그인하러 가기
+  if (isUnauthorized) {
     return (
       <SafeAreaView style={styles.container}>
-        <QueryErrorView
-          error={error}
-          hasToken={hasToken}
-          onRetry={refetch}
-        />
+        {renderHeader()}
+        <View style={styles.loginPromptContainer}>
+          <Ionicons name="person-outline" size={64} color={colors.INACTIVE} />
+          <Text style={styles.loginPromptText}>
+            로그인이 필요해요. 로그인해 주세요.
+          </Text>
+          <Pressable
+            style={styles.loginBtn}
+            onPress={() => router.replace("/auth")}
+          >
+            <Text style={styles.loginBtnText}>로그인하러 가기</Text>
+          </Pressable>
+        </View>
       </SafeAreaView>
     );
   }
 
+  // 정보가 안 받아와짐 (네트워크/기타 에러) → 데이터 불러오기(새로고침)
+  if (error && !userInfo) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {renderHeader()}
+        <View style={styles.loginPromptContainer}>
+          <Ionicons name="cloud-offline-outline" size={64} color={colors.INACTIVE} />
+          <Text style={styles.loginPromptText}>
+            데이터를 불러오지 못했어요.
+          </Text>
+          <Pressable
+            style={styles.loginBtn}
+            onPress={() => refetch()}
+            disabled={isRefetching}
+          >
+            <Text style={styles.loginBtnText}>
+              {isRefetching ? "불러오는 중…" : "데이터 불러오기(새로고침)"}
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // 조회 성공 → 유저 정보 표시
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.backBtn}
-          hitSlop={12}
-        >
-          <Ionicons name="chevron-back" size={28} color="#111" />
-        </Pressable>
-        <Text style={styles.headerTitle}>마이페이지</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
+      {renderHeader()}
       <View style={styles.content}>
         {/* 프로필 아이콘 */}
         <View style={styles.profileIcon}>
@@ -180,5 +203,42 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: colors.BLACK,
+  },
+  loginPromptContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    gap: 20,
+  },
+  loginPromptText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.INACTIVE,
+    textAlign: "center",
+  },
+  loginBtn: {
+    marginTop: 8,
+    backgroundColor: colors.BLACK,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  loginBtnText: {
+    color: colors.WHITE,
+    fontWeight: "800",
+    fontSize: 15,
+  },
+  clearTokenBtn: {
+    marginTop: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  clearTokenText: {
+    fontSize: 12,
+    color: colors.INACTIVE,
+    fontWeight: "500",
   },
 });

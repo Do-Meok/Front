@@ -32,7 +32,17 @@ export default function SignUpScreen() {
     },
   });
   const onSubmit = (formValues: SignUpForm) => {
-    signupMutation.mutate(formValues);
+    signupMutation.mutate(formValues, {
+      onError: (error: any) => {
+        // 409 Conflict: 이미 가입된 이메일 → 이메일 필드에 에러 표시
+        if (error?.response?.status === 409) {
+          signupForm.setError("email", {
+            type: "manual",
+            message: "이미 가입된 이메일입니다.",
+          });
+        }
+      },
+    });
   };
 
   return (
