@@ -1,14 +1,17 @@
 import { colors } from "@/constants";
 import useAuth from "@/hooks/useAuth";
+import { useNavigationContext } from "@/providers/NavigationProvider";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
+  Switch,
   Text,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -31,6 +34,7 @@ function renderHeader() {
 export default function MyPageScreen() {
   const { userInfoQuery } = useAuth();
   const { data: userInfo, isLoading, error, refetch, isRefetching } = userInfoQuery;
+  const { isOnboardingCompleted, setOnboardingCompleted } = useNavigationContext();
 
   const isUnauthorized = error && (error as any)?.response?.status === 401;
 
@@ -132,6 +136,26 @@ export default function MyPageScreen() {
               <Text style={styles.infoValue}>{userInfo.phone_num}</Text>
             </View>
           )}
+
+          {/* 임시: 온보딩 다시 보기 on/off */}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>온보딩 다시 보기 (임시)</Text>
+            <Switch
+              value={!isOnboardingCompleted}
+              onValueChange={async (on) => {
+                if (on) {
+                  await AsyncStorage.setItem("onboarding_completed", "false");
+                  setOnboardingCompleted(false);
+                  router.replace("/(onboarding)");
+                } else {
+                  await AsyncStorage.setItem("onboarding_completed", "true");
+                  setOnboardingCompleted(true);
+                }
+              }}
+              trackColor={{ false: "#e0e0e0", true: "#111" }}
+              thumbColor="#fff"
+            />
+          </View>
         </View>
       </View>
     </SafeAreaView>
