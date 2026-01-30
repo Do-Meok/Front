@@ -1,6 +1,6 @@
 import DateInputWithCalendar from "@/components/DateInputWithCalendar";
-import useCreateIngredient from "@/hooks/useCreateIngredient";
-import useUpdateIngredient from "@/hooks/useUpdateIngredient";
+import useCreateIngredient from "@/hooks/ingredients/useCreateIngredient";
+import useUpdateIngredient from "@/hooks/ingredients/useUpdateIngredient";
 import { fromKoreanStorageType } from "@/utils/storageType";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";

@@ -1,5 +1,5 @@
 import DateInputWithCalendar from "@/components/DateInputWithCalendar";
-import useUpdateIngredient from "@/hooks/useUpdateIngredient";
+import useUpdateIngredient from "@/hooks/ingredients/useUpdateIngredient";
 import { GetIngredientResponse } from "@/types";
 import { fromKoreanStorageType, toKoreanStorageType } from "@/utils/storageType";
 import { Ionicons } from "@expo/vector-icons";

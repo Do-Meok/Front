@@ -63,6 +63,7 @@ export type InfoResponse = {
   phone_num: string | null;
 };
 
+// 쇼핑 관련 타입
 export type ShoppingListResponse = {
   id: number;
   item_name: string;
@@ -71,3 +72,15 @@ export type ShoppingListResponse = {
 export type ShoppingListRequest = {
   item_name: string;
 }
+
+// 레시피 추천 관련 타입
+/** 보유 식재료 기반 메뉴 추천 (4가지) 응답 항목 */
+export type RecipeRecommendationItem = {
+  food: string;
+  use_ingredients: string[];
+  difficulty: number;
+};
+
+export type GetRecipeRecommendationsResponse = {
+  recipes: RecipeRecommendationItem[];
+};

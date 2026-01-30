@@ -1,33 +1,18 @@
-import { colors } from "@/constants";
-import { router } from "expo-router";
-import React from "react";
-import { StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
+import type { FeaturedRecipe } from "@/components/FeaturedRecipeCarousel";
 import ExpiringCarousel from "@/components/ExpiringCarousel";
 import FeaturedRecipeCarousel from "@/components/FeaturedRecipeCarousel";
 import HomeHeader from "@/components/HomeHeader";
-
-const featured = [
-  {
-    id: "r1",
-    title: "크림 파스타",
-    desc: "우유(D-2)를 처리할 수 있는 크림 파스타 어때요?  ",
-    image: require("@/assets/images/food/pasta.jpg"),
-  },
-  {
-    id: "r2",
-    title: "두부김치",
-    desc: "두부가 오늘까지라면? 간단하게 한 끼 해결!",
-    image: require("@/assets/images/food/tofu-kimchi.jpg"),
-  },
-  {
-    id: "r3",
-    title: "계란볶음밥",
-    desc: "재료 적어도 가능한 빠른 메뉴!",
-    image: require("@/assets/images/food/eggbbokumbab.jpg"),
-  },
-];
+import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
+import { colors } from "@/constants";
+import { router } from "expo-router";
+import React, { useMemo } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const expiring = [
   { id: "1", name: "우유", expiresAt: "2026-01-31" },
@@ -37,22 +22,50 @@ const expiring = [
 ];
 
 export default function HomeScreen() {
+  const {
+    data: recommendationsData,
+    isLoading: isRecommendLoading,
+    error: recommendError,
+  } = useGetRecommendationsRecipes();
+
+  const featuredItems = useMemo((): FeaturedRecipe[] => {
+    const recipes = recommendationsData?.recipes ?? [];
+    return recipes.map((r, i) => ({
+      id: `recommend-${i}-${r.food}`,
+      title: r.food,
+      desc: r.use_ingredients?.length
+        ? `사용 재료: ${r.use_ingredients.join(", ")}`
+        : "",
+      difficulty: r.difficulty,
+    }));
+  }, [recommendationsData?.recipes]);
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* 홈 헤더 */}
       <HomeHeader
         onPressBell={() => {}}
         onPressProfile={() => router.push("/(tabs)/mypage")}
       />
       <View style={styles.page}>
-        {/* 오늘의 추천 */}
-        <FeaturedRecipeCarousel
-          titleLabel="오늘의 추천"
-          items={featured}
-          onPressItem={(item) => {
-            // router.push(`/recipes/${item.id}`) 같은 식으로 이동
-          }}
-        />
+        {/* 오늘의 추천 (보유 식재료 기반, 레시피 추천과 동일 API) */}
+        {isRecommendLoading && !recommendationsData ? (
+          <View style={styles.recommendLoading}>
+            <ActivityIndicator size="small" color={colors.BLACK} />
+            <Text style={styles.recommendLoadingText}>추천 불러오는 중...</Text>
+          </View>
+        ) : recommendError && !recommendationsData ? (
+          <View style={styles.recommendLoading}>
+            <Text style={styles.recommendLoadingText}>
+              추천을 불러올 수 없어요
+            </Text>
+          </View>
+        ) : featuredItems.length > 0 ? (
+          <FeaturedRecipeCarousel
+            titleLabel="오늘의 추천"
+            items={featuredItems}
+            onPressItem={(item) => router.push(`/recipes/${item.id}`)}
+          />
+        ) : null}
 
         {/* 유통기한 마감 */}
         <ExpiringCarousel
@@ -93,5 +106,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 10,
     gap: 45,
+  },
+  recommendLoading: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 24,
+    gap: 8,
+  },
+  recommendLoadingText: {
+    fontSize: 13,
+    color: "#777",
   },
 });

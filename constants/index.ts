@@ -15,7 +15,9 @@ const queryKey = {
   GET_ME: "getMe",
   INGREDIENTS: "ingredients",
   SHOPPING: "shopping",
-  GET_SHOPPING: "get_shopping"
+  GET_SHOPPING: "get_shopping",
+  ASSISTANT: "assistant",
+  GET_RECOMMENDATIONS_RECIPES: "get_recommendations_recipes",
 };
 
 export { colors, queryKey };

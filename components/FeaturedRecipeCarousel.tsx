@@ -11,17 +11,20 @@ import {
 } from "react-native";
 import EllipsizedDesc from "./EllipsizedDesc";
 
-type FeaturedRecipe = {
+export type FeaturedRecipe = {
   id: string;
   title: string;
   desc: string;
   image?: string | ImageSourcePropType;
+  /** 난이도 1~5 (별 표시용, 없으면 표시 안 함) */
+  difficulty?: number;
 };
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const GAP = 12;
 const CARD_W = Math.min(SCREEN_W * 0.86, 360);
 const SNAP = CARD_W + GAP;
+const DEFAULT_HERO_HEIGHT = 210;
 
 function toImageSource(
   image?: FeaturedRecipe["image"],
@@ -37,10 +40,13 @@ export default function FeaturedRecipeCarousel({
   titleLabel = "추천 메뉴",
   items,
   onPressItem,
+  heroImageHeight = DEFAULT_HERO_HEIGHT,
 }: {
   titleLabel?: string;
   items: FeaturedRecipe[];
   onPressItem?: (item: FeaturedRecipe) => void;
+  /** 카드 이미지 영역 높이 (추천 페이지에서만 더 크게 쓸 수 있음) */
+  heroImageHeight?: number;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -66,12 +72,13 @@ export default function FeaturedRecipeCarousel({
         renderItem={({ item }) => {
           const src = toImageSource(item.image);
 
+          const heroStyle = [styles.heroImage, { height: heroImageHeight }];
           return (
             <Pressable style={styles.card} onPress={() => onPressItem?.(item)}>
               {src ? (
-                <Image source={src} style={styles.heroImage} />
+                <Image source={src} style={heroStyle} />
               ) : (
-                <View style={[styles.heroImage, styles.imagePlaceholder]} />
+                <View style={[heroStyle, styles.imagePlaceholder]} />
               )}
 
               <View style={styles.textArea}>
@@ -79,6 +86,12 @@ export default function FeaturedRecipeCarousel({
                   {item.title}
                 </Text>
                 <EllipsizedDesc text={item.desc} />
+                {typeof item.difficulty === "number" && (
+                  <Text style={styles.difficulty}>
+                    난이도: {"★".repeat(Math.min(5, Math.max(0, item.difficulty)))}
+                    {"☆".repeat(5 - Math.min(5, Math.max(0, item.difficulty)))}
+                  </Text>
+                )}
               </View>
             </Pressable>
           );
@@ -129,6 +142,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
     color: "#111",
+  },
+  difficulty: {
+    marginTop: 6,
+    fontSize: 12,
+    color: "#666",
   },
 
   dots: {

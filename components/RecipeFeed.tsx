@@ -1,9 +1,22 @@
-import FeaturedRecipeCarousel from "@/components/FeaturedRecipeCarousel";
+import FeaturedRecipeCarousel, {
+  type FeaturedRecipe,
+} from "@/components/FeaturedRecipeCarousel";
 import PageHeader from "@/components/PageHeader";
+import QueryErrorView from "@/components/QueryErrorView";
+import { colors } from "@/constants";
+import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
+import { getSecureStore } from "@/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 export type Recipe = {
   id: string;
@@ -46,11 +59,25 @@ type Mode = "list" | "recommend" | "log";
 
 export default function RecipeFeed({ mode }: { mode: Mode }) {
   const [q, setQ] = useState("");
+  const [hasToken, setHasToken] = useState(false);
+
+  const {
+    data: recommendationsData,
+    isLoading: isRecommendLoading,
+    error: recommendError,
+    refetch: refetchRecommendations,
+    isRefetching: isRecommendRefetching,
+  } = useGetRecommendationsRecipes();
+
+  useEffect(() => {
+    if (mode === "recommend") {
+      getSecureStore("accessToken").then((token) => setHasToken(!!token));
+    }
+  }, [mode]);
 
   const baseList = useMemo(() => {
     if (mode === "log") return [];
-    if (mode === "recommend")
-      return [...MOCK_RECIPES].sort((a, b) => b.rating - a.rating);
+    if (mode === "recommend") return [];
     return MOCK_RECIPES;
   }, [mode]);
 
@@ -71,9 +98,21 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
       id: r.id,
       title: r.title,
       desc: r.desc,
-      imageUri: r.image,
+      image: r.image,
     }));
   }, [list]);
+
+  const recommendCarouselItems = useMemo((): FeaturedRecipe[] => {
+    const recipes = recommendationsData?.recipes ?? [];
+    return recipes.map((r, i) => ({
+      id: `recommend-${i}-${r.food}`,
+      title: r.food,
+      desc: r.use_ingredients?.length
+        ? `사용 재료: ${r.use_ingredients.join(", ")}`
+        : "",
+      difficulty: r.difficulty,
+    }));
+  }, [recommendationsData?.recipes]);
 
   const title =
     mode === "recommend"
@@ -82,11 +121,73 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
         ? "요리 기록"
         : "레시피";
 
+  if (mode === "recommend") {
+    if (isRecommendLoading && !recommendationsData) {
+      return (
+        <View style={styles.page}>
+          <PageHeader title={title} />
+          <View style={styles.emptyWrap}>
+            <ActivityIndicator size="large" color={colors.BLACK} />
+            <Text style={styles.emptyDesc}>추천 메뉴를 불러오는 중...</Text>
+          </View>
+        </View>
+      );
+    }
+    if (recommendError && !recommendationsData) {
+      return (
+        <View style={styles.page}>
+          <PageHeader title={title} />
+          <QueryErrorView
+            error={recommendError}
+            hasToken={hasToken}
+            onRetry={() => refetchRecommendations()}
+          />
+        </View>
+      );
+    }
+    return (
+      <View style={styles.page}>
+        <PageHeader title={title} />
+        {recommendCarouselItems.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <Ionicons name="restaurant-outline" size={28} color="#999" />
+            <Text style={styles.emptyTitle}>추천할 메뉴가 없어요</Text>
+            <Text style={styles.emptyDesc}>
+              식재료를 등록하면 맞춤 추천을 받을 수 있어요.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.recommendContent}>
+            <FeaturedRecipeCarousel
+              titleLabel="추천 메뉴"
+              items={recommendCarouselItems}
+              onPressItem={(item) => router.push(`/recipes/${item.id}`)}
+              heroImageHeight={280}
+            />
+            <View style={styles.refetchBtnWrap}>
+              <Pressable
+                style={styles.refetchBtn}
+                onPress={() => refetchRecommendations()}
+                disabled={isRecommendRefetching}
+              >
+                <Ionicons name="refresh" size={18} color="#111" />
+                <Text style={styles.refetchBtnText}>
+                  {isRecommendRefetching
+                    ? "불러오는 중..."
+                    : "다른 추천 요리 불러오기"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.page}>
       <PageHeader title={title} />
 
-      {/* 요리 기록은 검색/목록 대신 빈 상태만 */}
       {mode === "log" ? (
         <View style={styles.emptyWrap}>
           <Ionicons name="calendar-outline" size={28} color="#999" />
@@ -97,7 +198,6 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
         </View>
       ) : (
         <>
-          {/* 검색바 */}
           <View style={styles.search}>
             <Ionicons name="search-outline" size={18} color="#666" />
             <TextInput
@@ -114,7 +214,6 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
             )}
           </View>
 
-          {/* 내용 */}
           {featuredItems.length === 0 ? (
             <View style={styles.emptyWrap}>
               <Ionicons name="search-outline" size={28} color="#999" />
@@ -123,7 +222,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
             </View>
           ) : (
             <FeaturedRecipeCarousel
-              titleLabel={mode === "recommend" ? "추천 메뉴" : "레시피"}
+              titleLabel="레시피"
               items={featuredItems}
               onPressItem={(item) => router.push(`/recipes/${item.id}`)}
             />
@@ -164,4 +263,26 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 15, fontWeight: "800", color: "#111" },
   emptyDesc: { fontSize: 12, color: "#777", textAlign: "center" },
+
+  recommendContent: {
+    flex: 1,
+    paddingTop: 24,
+  },
+  refetchBtnWrap: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  refetchBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "#e6e6e6",
+    borderRadius: 12,
+    alignSelf: "center",
+  },
+  refetchBtnText: { fontSize: 14, fontWeight: "700", color: "#111" },
 });

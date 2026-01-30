@@ -1,9 +1,9 @@
 import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
 import { colors } from "@/constants";
-import useCreateIngredient from "@/hooks/useCreateIngredient";
-import useGetIngredients from "@/hooks/useGetIngredients";
-import useUpdateIngredient from "@/hooks/useUpdateIngredient";
+import useCreateIngredient from "@/hooks/ingredients/useCreateIngredient";
+import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
+import useUpdateIngredient from "@/hooks/ingredients/useUpdateIngredient";
 import { addDays, fmtYYYYMMDD } from "@/utils/date";
 import { getSecureStore } from "@/utils/secureStore";
 import { fromKoreanStorageType } from "@/utils/storageType";
