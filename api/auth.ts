@@ -1,3 +1,4 @@
+import { clearStoredTokens } from "./authRefresh";
 import { InfoResponse, LoginForm, SignUpForm } from "@/types";
 import axiosInstance, { PREFIX } from "./axios";
 
@@ -20,5 +21,11 @@ async function getUserInfo(): Promise<InfoResponse> {
   return data;
 }
 
-export { login, signup, getUserInfo };
+/** 로그아웃: 저장된 토큰 삭제 + axios 헤더 제거 */
+async function logout(): Promise<void> {
+  await clearStoredTokens();
+  delete axiosInstance.defaults.headers.common["Authorization"];
+}
+
+export { login, signup, getUserInfo, logout };
 

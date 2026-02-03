@@ -36,14 +36,30 @@ export default function MyPageScreen() {
   const { data: userInfo, isLoading, error, refetch, isRefetching } = userInfoQuery;
   const { isOnboardingCompleted, setOnboardingCompleted } = useNavigationContext();
 
-  const isUnauthorized = error && (error as any)?.response?.status === 401;
+  // 401 또는 서버 500(토큰 만료 메시지) → 로그인하러 가기
+  const status = (error as any)?.response?.status;
+  const msg = String(
+    (error as any)?.response?.data?.message ??
+      (error as any)?.response?.data?.detail ??
+      ""
+  );
+  const isUnauthorized =
+    error &&
+    (status === 401 || (status === 500 && /토큰|token|expired|만료/i.test(msg)));
 
   // 로딩 중
   if (isLoading && !userInfo) {
     return (
       <SafeAreaView style={styles.container}>
+        {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.BLACK} />
+          <Pressable
+            style={[styles.loginBtnSecondary, { marginTop: 24 }]}
+            onPress={() => router.replace("/auth")}
+          >
+            <Text style={styles.loginBtnSecondaryText}>로그인하러 가기</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -70,7 +86,7 @@ export default function MyPageScreen() {
     );
   }
 
-  // 정보가 안 받아와짐 (네트워크/기타 에러) → 데이터 불러오기(새로고침)
+  // 정보가 안 받아와짐 (네트워크/기타 에러) → 새로고침 + 로그인하러 가기
   if (error && !userInfo) {
     return (
       <SafeAreaView style={styles.container}>
@@ -80,15 +96,23 @@ export default function MyPageScreen() {
           <Text style={styles.loginPromptText}>
             데이터를 불러오지 못했어요.
           </Text>
-          <Pressable
-            style={styles.loginBtn}
-            onPress={() => refetch()}
-            disabled={isRefetching}
-          >
-            <Text style={styles.loginBtnText}>
-              {isRefetching ? "불러오는 중…" : "데이터 불러오기(새로고침)"}
-            </Text>
-          </Pressable>
+          <View style={styles.loginPromptActions}>
+            <Pressable
+              style={styles.loginBtn}
+              onPress={() => refetch()}
+              disabled={isRefetching}
+            >
+              <Text style={styles.loginBtnText}>
+                {isRefetching ? "불러오는 중…" : "다시 시도"}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={styles.loginBtnSecondary}
+              onPress={() => router.replace("/auth")}
+            >
+              <Text style={styles.loginBtnSecondaryText}>로그인하러 가기</Text>
+            </Pressable>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -234,6 +258,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 24,
     gap: 20,
+  },
+  loginPromptActions: {
+    width: "100%",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 8,
+  },
+  loginBtnSecondary: {
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+  },
+  loginBtnSecondaryText: {
+    color: colors.BLACK,
+    fontWeight: "700",
+    fontSize: 15,
   },
   loginPromptText: {
     fontSize: 16,

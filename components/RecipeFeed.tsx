@@ -1,5 +1,5 @@
 import FeaturedRecipeCarousel, {
-  type FeaturedRecipe,
+    type FeaturedRecipe,
 } from "@/components/FeaturedRecipeCarousel";
 import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
@@ -10,12 +10,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 
 export type Recipe = {

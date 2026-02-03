@@ -1,6 +1,8 @@
 import { getUserInfo, login, signup } from "@/api/auth";
 import axiosInstance from "@/api/axios";
 import { saveSecureStore } from "@/utils/secureStore";
+import { useNavigationContext } from "@/providers/NavigationProvider";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Alert } from "react-native";
@@ -36,14 +38,23 @@ function useLogin() {
         data?.accessToken ||
         data?.access_token ||
         data?.token ||
-        data?.access_token ||
-        (data as any)?.data?.accessToken;
+        (data as any)?.data?.accessToken ||
+        (data as any)?.data?.access_token ||
+        (data as any)?.data?.token;
+
+      const refreshToken =
+        data?.refreshToken ||
+        data?.refresh_token ||
+        (data as any)?.data?.refreshToken ||
+        (data as any)?.data?.refresh_token;
 
       if (token) {
         await saveSecureStore("accessToken", token);
-        // axios 인스턴스에 토큰 설정
+        if (refreshToken) {
+          await saveSecureStore("refreshToken", refreshToken);
+        }
+        await AsyncStorage.removeItem("is_guest");
         axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        // 토큰 저장 후 약간의 지연을 두고 이동 (토큰이 완전히 저장되도록)
         setTimeout(() => {
           router.replace("/(tabs)");
         }, 100);
@@ -69,18 +80,33 @@ function useLogin() {
   });
 }
 
-function useUserInfo() {
+/** 401 또는 서버 500(토큰 만료 메시지)이면 재시도하지 않음 → 로그인 유도 */
+function isTokenOrUnauthorizedError(error: any): boolean {
+  const status = error?.response?.status;
+  if (status === 401) return true;
+  if (status === 500) {
+    const msg = String(
+      error?.response?.data?.message ?? error?.response?.data?.detail ?? ""
+    );
+    return /토큰|token|expired|만료/i.test(msg);
+  }
+  return false;
+}
+
+function useUserInfo(enabled: boolean) {
   return useQuery({
     queryKey: ["userInfo"],
     queryFn: getUserInfo,
-    retry: (_, error: any) => error?.response?.status !== 401,
+    enabled,
+    retry: (_, error: any) => !isTokenOrUnauthorizedError(error),
   });
 }
 
 function useAuth() {
+  const { hasToken } = useNavigationContext();
   const signupMutation = useSignUp();
   const loginMutation = useLogin();
-  const userInfoQuery = useUserInfo();
+  const userInfoQuery = useUserInfo(hasToken === true);
 
   return {
     signupMutation,

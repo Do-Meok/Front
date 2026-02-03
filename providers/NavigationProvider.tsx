@@ -1,3 +1,4 @@
+import { consumeGuestChosen } from "@/utils/guestMode";
 import { getSecureStore } from "@/utils/secureStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useSegments } from "expo-router";
@@ -94,10 +95,14 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
         // 온보딩 화면에 있으면 auth로 이동
         router.replace("/auth");
       } else if (inTabs) {
-        // tabs에 있으면 auth로 이동
-        router.replace("/auth");
+        // "로그인 없이 시작" 직후 동기 플래그 확인 → 있으면 리다이렉트 안 함
+        if (consumeGuestChosen()) return;
+        AsyncStorage.getItem("is_guest").then((value) => {
+          if (value !== "true") {
+            router.replace("/auth");
+          }
+        });
       }
-      // 초기 라우트면 홈에 그대로 두고 auth로 이동하지 않음 (사용자가 직접 로그인하도록)
       return;
     }
 

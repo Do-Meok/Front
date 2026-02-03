@@ -1,6 +1,10 @@
 import { colors } from "@/constants";
+import { setGuestChosen } from "@/utils/guestMode";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text } from "react-native";
+
+const GUEST_STORAGE_KEY = "is_guest";
 
 export default function AuthButton() {
   const onPressKakao = () => {
@@ -14,8 +18,10 @@ export default function AuthButton() {
     router.push("/auth/login");
   };
 
-  const onPressGuest = () => {
-    // 로그인 없이 시작
+  const onPressGuest = async () => {
+    // 동기 플래그 먼저 설정 → 네비 가드가 탭에서 바로 튕기지 않도록
+    setGuestChosen();
+    await AsyncStorage.setItem(GUEST_STORAGE_KEY, "true");
     router.replace("/(tabs)");
   };
 
