@@ -9,5 +9,15 @@ async function getRecommendationsRecipes(): Promise<GetRecipeRecommendationsResp
   return data;
 }
 
+/** 선택한 메뉴 상세 조리법 생성 **/
+async function createRecipeDetails(recipeBody: GetRecipeRecommendationsResponse): Promise<GetRecipeRecommendationsResponse> {
+  const { data } = await axiosInstance.post<CreateRecipeDetailsResponse>(
+    `${PREFIX}/assistant/assistant/detail`,
+    recipeBody
+  );
+
+  return data;
+}
+
 export { getRecommendationsRecipes };
 
