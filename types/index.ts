@@ -84,3 +84,18 @@ export type RecipeRecommendationItem = {
 export type GetRecipeRecommendationsResponse = {
   recipes: RecipeRecommendationItem[];
 };
+
+// 백엔드 응답 타입 (ingredient_name 사용)
+export type BackendAddIngredientResponse = {
+  id: number;
+  ingredient_name: string;
+  purchase_date: string;
+};
+
+export type BackendGetIngredientResponse = {
+  id: number;
+  ingredient_name: string;
+  purchase_date: string;
+  expiration_date: string | null;
+  storage_type: StorageType | null;
+};
