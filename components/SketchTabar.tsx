@@ -203,7 +203,7 @@ export default function SketchTabBar({
               ]}
               android_ripple={{ color: colors.BLACK, borderless: false }}
             >
-              {              options.tabBarIcon
+              {options.tabBarIcon
                 ? options.tabBarIcon({ focused, color, size: 20 })
                 : null}
 

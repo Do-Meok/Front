@@ -1,4 +1,4 @@
-import { searchRecipesByName } from "@/api/recipes";
+import { searchRecipesByName } from "@/api/assistants";
 import { queryKey } from "@/constants";
 import { useQuery } from "@tanstack/react-query";
 

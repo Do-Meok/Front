@@ -20,6 +20,8 @@ const queryKey = {
   GET_RECOMMENDATIONS_RECIPES: "get_recommendations_recipes",
   GET_INSTANT_RECOMMENDATIONS: "get_instant_recommendations",
   SEARCH_RECIPES_BY_NAME: "search_recipes_by_name",
+  RECIPES: "recipes",
+  GET_RECIPES: "get_recipes",
 };
 
 export { colors, queryKey };

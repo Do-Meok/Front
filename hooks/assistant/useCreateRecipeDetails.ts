@@ -1,5 +1,5 @@
+import { createRecipeDetails } from "@/api/assistants";
 import queryClient from "@/api/queryClient";
-import { createRecipeDetails } from "@/api/recipes";
 import { queryKey } from "@/constants";
 import { useMutation } from "@tanstack/react-query";
 import { Alert } from "react-native";

@@ -11,7 +11,6 @@ import {
 import axiosInstance, { PREFIX } from "./axios";
 
 
-
 // 식재료 추가
 async function addIngredient(
   body: AddIngredientRequest
@@ -82,8 +81,6 @@ async function getIngredient(
   
   return data;
 }
-
-
 
 
 export {

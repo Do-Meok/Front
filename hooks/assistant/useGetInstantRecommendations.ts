@@ -1,4 +1,4 @@
-import { getInstantRecommendations } from "@/api/recipes";
+import { getInstantRecommendations } from "@/api/assistants";
 import { queryKey } from "@/constants";
 import { useQuery } from "@tanstack/react-query";
 

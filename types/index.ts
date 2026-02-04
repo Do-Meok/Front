@@ -20,6 +20,16 @@ export type LoginForm = {
   password: string;
 };
 
+// User 관련 타입
+export type InfoResponse = {
+  id: number;
+  email: string;
+  nickname: string;
+  name: string | null;
+  birth: string | null;
+  phone_num: string | null;
+};
+
 // Ingredient 관련 타입
 export type StorageType = "FRIDGE" | "FREEZER" | "ROOM";
 
@@ -53,14 +63,19 @@ export type GetIngredientResponse = {
   storage_type: StorageType | null;
 };
 
-// User 관련 타입
-export type InfoResponse = {
+// 백엔드 응답 타입 (ingredient_name 사용)
+export type BackendAddIngredientResponse = {
   id: number;
-  email: string;
-  nickname: string;
-  name: string | null;
-  birth: string | null;
-  phone_num: string | null;
+  ingredient_name: string;
+  purchase_date: string;
+};
+
+export type BackendGetIngredientResponse = {
+  id: number;
+  ingredient_name: string;
+  purchase_date: string;
+  expiration_date: string | null;
+  storage_type: StorageType | null;
 };
 
 // 쇼핑 관련 타입
@@ -100,17 +115,10 @@ export type RecipeDetailResponse = {
 export type CreateRecipeDetailsResponse = RecipeDetailResponse;
 export type SearchRecipesByNameResponse = RecipeDetailResponse;
 export type GetInstantRecommendationsResponse = RecipeDetailResponse;
-// 백엔드 응답 타입 (ingredient_name 사용)
-export type BackendAddIngredientResponse = {
-  id: number;
-  ingredient_name: string;
-  purchase_date: string;
-};
 
-export type BackendGetIngredientResponse = {
+// 레시피 저장 관련 타입
+export type SaveRecipeRequest = RecipeDetailResponse;
+export type SaveRecipeResponse = RecipeDetailResponse & {
   id: number;
-  ingredient_name: string;
-  purchase_date: string;
-  expiration_date: string | null;
-  storage_type: StorageType | null;
+  created_at: string; // ISO 8601 형식 (예: "2019-08-24T14:15:22Z")
 };
