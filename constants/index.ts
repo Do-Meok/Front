@@ -18,6 +18,8 @@ const queryKey = {
   GET_SHOPPING: "get_shopping",
   ASSISTANT: "assistant",
   GET_RECOMMENDATIONS_RECIPES: "get_recommendations_recipes",
+  GET_INSTANT_RECOMMENDATIONS: "get_instant_recommendations",
+  SEARCH_RECIPES_BY_NAME: "search_recipes_by_name",
 };
 
 export { colors, queryKey };
