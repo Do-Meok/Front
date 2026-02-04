@@ -20,7 +20,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
               name={focused ? "home" : "home-outline"}
-              size={size ?? 26}
+              size={size ?? 20}
               color={color}
             />
           ),
@@ -35,7 +35,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
               name={focused ? "nutrition" : "nutrition-outline"}
-              size={size ?? 26}
+              size={size ?? 20}
               color={color}
             />
           ),
@@ -50,7 +50,22 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
               name={focused ? "book" : "book-outline"}
-              size={size ?? 26}
+              size={size ?? 20}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* 냉장고 */}
+      <Tabs.Screen
+        name="fridge"
+        options={{
+          title: "냉장고",
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? "snow" : "snow-outline"}
+              size={size ?? 20}
               color={color}
             />
           ),
@@ -65,7 +80,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
               name={focused ? "list" : "list-outline"}
-              size={size ?? 26}
+              size={size ?? 20}
               color={color}
             />
           ),
