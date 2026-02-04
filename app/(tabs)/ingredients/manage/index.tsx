@@ -99,6 +99,7 @@ export default function IngredientsManagePage() {
     }
   };
 
+  // 식재료 추가가
   const handleAdd = () => {
     if (!newName.trim()) {
       Alert.alert("알림", "재료명을 입력해주세요.");

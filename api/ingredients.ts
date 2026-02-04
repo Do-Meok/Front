@@ -21,6 +21,7 @@ type BackendGetIngredientResponse = {
   purchase_date: string;
   expiration_date: string | null;
   storage_type: StorageType | null;
+  is_auto_fillable: boolean;
 };
 
 // 식재료 추가
@@ -92,6 +93,9 @@ async function updateIngredient(
   
   return data;
 }
+
+// 식재료 유통기한/보관방법 자동 채우기
+async function autoFillIngredientDetails()
 
 export {
   addIngredient, deleteIngredient, getIngredient, getIngredients, setIngredientDetails, updateIngredient

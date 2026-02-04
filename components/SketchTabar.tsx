@@ -1,7 +1,6 @@
 import { colors } from "@/constants";
-import { Ionicons } from "@expo/vector-icons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { router, usePathname } from "expo-router";
+import { usePathname } from "expo-router";
 import {
   Platform,
   Pressable,
@@ -12,6 +11,11 @@ import {
   ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  getFridgeTabBarItems,
+  getIngredientTabBarItems,
+  getRecipeTabBarItems,
+} from "./tabBarConfigs";
 
 export default function SketchTabBar({
   state,
@@ -23,124 +27,13 @@ export default function SketchTabBar({
 
   const inIngredients =
     pathname === "/ingredients" || pathname.startsWith("/ingredients/");
-
   const inRecipes = pathname === "/recipes" || pathname.startsWith("/recipes/");
+  const inFridge =
+    pathname === "/fridge" || pathname.startsWith("/fridge/");
 
-  // ✅ 재료 전용 탭바(기존 그대로)
-  const ingredientItems = [
-    {
-      key: "home",
-      label: "홈",
-      focused: pathname === "/" || pathname === "/index",
-      icon: (focused: boolean, color: string) => (
-        <Ionicons
-          name={focused ? "arrow-back" : "arrow-back-outline"}
-          size={26}
-          color={color}
-        />
-      ),
-      go: () => router.replace("/"),
-    },
-    {
-      key: "ingredients",
-      label: "재료",
-      focused: pathname === "/ingredients",
-      icon: (focused: boolean, color: string) => (
-        <Ionicons
-          name={focused ? "nutrition" : "nutrition-outline"}
-          size={26}
-          color={color}
-        />
-      ),
-      go: () => router.replace("/ingredients"),
-    },
-    {
-      key: "manage",
-      label: "재료 관리",
-      focused: pathname.startsWith("/ingredients/manage"),
-      icon: (focused: boolean, color: string) => (
-        <Ionicons
-          name={focused ? "create" : "create-outline"}
-          size={26}
-          color={color}
-        />
-      ),
-      go: () => router.replace("/ingredients/manage"),
-    },
-    {
-      key: "fridge",
-      label: "냉장고 관리",
-      focused: pathname.startsWith("/ingredients/fridge"),
-      icon: (focused: boolean, color: string) => (
-        <Ionicons
-          name={focused ? "snow" : "snow-outline"}
-          size={26}
-          color={color}
-        />
-      ),
-      go: () => router.replace("/ingredients/fridge"),
-    },
-  ];
-
-  // ✅ 레시피 전용 탭바(추가)
-  const recipeItems = [
-    {
-      key: "home",
-      label: "홈",
-      focused: pathname === "/" || pathname === "/index",
-      icon: (focused: boolean, color: string) => (
-        <Ionicons
-          name={focused ? "arrow-back" : "arrow-back-outline"}
-          size={26}
-          color={color}
-        />
-      ),
-      go: () => router.replace("/"),
-    },
-    {
-      key: "recommend",
-      label: "레시피 추천",
-      focused: pathname.startsWith("/recipes/recommend"),
-      icon: (focused: boolean, color: string) => (
-        <Ionicons
-          name={focused ? "sparkles" : "sparkles-outline"}
-          size={26}
-          color={color}
-        />
-      ),
-      go: () => router.replace("/recipes/recommend"),
-    },
-    {
-      key: "recipes",
-      label: "레시피",
-      // /recipes, /recipes/[id] 같은 상세도 여기로 묶이게 처리
-      focused:
-        inRecipes &&
-        !pathname.startsWith("/recipes/recommend") &&
-        !pathname.startsWith("/recipes/log"),
-      icon: (focused: boolean, color: string) => (
-        <Ionicons
-          name={focused ? "book" : "book-outline"}
-          size={26}
-          color={color}
-        />
-      ),
-      go: () => router.replace("/recipes"),
-    },
-    {
-      key: "log",
-      label: "요리 기록",
-      focused: pathname.startsWith("/recipes/log"),
-      icon: (focused: boolean, color: string) => (
-        <Ionicons
-          name={focused ? "calendar" : "calendar-outline"}
-          size={26}
-          color={color}
-        />
-      ),
-      go: () => router.replace("/recipes/log"),
-    },
-  ];
+  const ingredientItems = getIngredientTabBarItems(pathname);
+  const recipeItems = getRecipeTabBarItems(pathname);
+  const fridgeItems = getFridgeTabBarItems(pathname);
 
   const wrapStyle: StyleProp<ViewStyle> = [
     styles.bar,
@@ -224,6 +117,43 @@ export default function SketchTabBar({
     );
   }
 
+  // ✅ 냉장고 영역이면 냉장고 전용 탭바
+  if (inFridge) {
+    return (
+      <View style={wrapStyle}>
+        {fridgeItems.map((item, index) => {
+          const color = item.focused ? colors.BLACK : colors.INACTIVE;
+
+          return (
+            <View
+              key={item.key}
+              style={[
+                styles.itemWrap,
+                index !== fridgeItems.length - 1 && styles.dividerRight,
+              ]}
+            >
+              <Pressable
+                onPress={() => {
+                  if (!item.focused) item.go();
+                }}
+                style={({ pressed }) => [
+                  styles.item,
+                  pressed && { opacity: 0.7 },
+                ]}
+                android_ripple={{ color: "#00000010", borderless: false }}
+              >
+                {item.icon(item.focused, color)}
+                <Text style={[styles.label, { color }]} numberOfLines={1}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            </View>
+          );
+        })}
+      </View>
+    );
+  }
+
   // ✅ 기본(메인) 탭바: 마이페이지 제외
   const visibleRoutes = state.routes.filter(
     (route) => route.name !== "mypage"
@@ -273,8 +203,8 @@ export default function SketchTabBar({
               ]}
               android_ripple={{ color: colors.BLACK, borderless: false }}
             >
-              {options.tabBarIcon
-                ? options.tabBarIcon({ focused, color, size: 26 })
+              {              options.tabBarIcon
+                ? options.tabBarIcon({ focused, color, size: 20 })
                 : null}
 
               <Text style={[styles.label, { color }]} numberOfLines={1}>
