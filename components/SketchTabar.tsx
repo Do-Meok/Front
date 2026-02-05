@@ -3,19 +3,19 @@ import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { usePathname } from "expo-router";
 import {
   Platform,
-  Pressable,
   StyleProp,
   StyleSheet,
-  Text,
   View,
   ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import TabBarItem from "./TabBarItem";
 import {
   getFridgeTabBarItems,
   getIngredientTabBarItems,
   getRecipeTabBarItems,
 } from "./tabBarConfigs";
+
 
 export default function SketchTabBar({
   state,
@@ -49,31 +49,17 @@ export default function SketchTabBar({
       <View style={wrapStyle}>
         {ingredientItems.map((item, index) => {
           const color = item.focused ? colors.BLACK : colors.INACTIVE;
-
           return (
-            <View
+            <TabBarItem
               key={item.key}
-              style={[
-                styles.itemWrap,
-                index !== ingredientItems.length - 1 && styles.dividerRight,
-              ]}
-            >
-              <Pressable
-                onPress={() => {
-                  if (!item.focused) item.go();
-                }}
-                style={({ pressed }) => [
-                  styles.item,
-                  pressed && { opacity: 0.7 },
-                ]}
-                android_ripple={{ color: "#00000010", borderless: false }}
-              >
-                {item.icon(item.focused, color)}
-                <Text style={[styles.label, { color }]} numberOfLines={1}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            </View>
+              showDividerRight={index !== ingredientItems.length - 1}
+              onPress={() => {
+                if (!item.focused) item.go();
+              }}
+              icon={item.icon(item.focused, color)}
+              label={item.label}
+              color={color}
+            />
           );
         })}
       </View>
@@ -86,31 +72,17 @@ export default function SketchTabBar({
       <View style={wrapStyle}>
         {recipeItems.map((item, index) => {
           const color = item.focused ? colors.BLACK : colors.INACTIVE;
-
           return (
-            <View
+            <TabBarItem
               key={item.key}
-              style={[
-                styles.itemWrap,
-                index !== recipeItems.length - 1 && styles.dividerRight,
-              ]}
-            >
-              <Pressable
-                onPress={() => {
-                  if (!item.focused) item.go();
-                }}
-                style={({ pressed }) => [
-                  styles.item,
-                  pressed && { opacity: 0.7 },
-                ]}
-                android_ripple={{ color: "#00000010", borderless: false }}
-              >
-                {item.icon(item.focused, color)}
-                <Text style={[styles.label, { color }]} numberOfLines={1}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            </View>
+              showDividerRight={index !== recipeItems.length - 1}
+              onPress={() => {
+                if (!item.focused) item.go();
+              }}
+              icon={item.icon(item.focused, color)}
+              label={item.label}
+              color={color}
+            />
           );
         })}
       </View>
@@ -123,51 +95,31 @@ export default function SketchTabBar({
       <View style={wrapStyle}>
         {fridgeItems.map((item, index) => {
           const color = item.focused ? colors.BLACK : colors.INACTIVE;
-
           return (
-            <View
+            <TabBarItem
               key={item.key}
-              style={[
-                styles.itemWrap,
-                index !== fridgeItems.length - 1 && styles.dividerRight,
-              ]}
-            >
-              <Pressable
-                onPress={() => {
-                  if (!item.focused) item.go();
-                }}
-                style={({ pressed }) => [
-                  styles.item,
-                  pressed && { opacity: 0.7 },
-                ]}
-                android_ripple={{ color: "#00000010", borderless: false }}
-              >
-                {item.icon(item.focused, color)}
-                <Text style={[styles.label, { color }]} numberOfLines={1}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            </View>
+              showDividerRight={index !== fridgeItems.length - 1}
+              onPress={() => {
+                if (!item.focused) item.go();
+              }}
+              icon={item.icon(item.focused, color)}
+              label={item.label}
+              color={color}
+            />
           );
         })}
       </View>
     );
   }
 
-  // ✅ 기본(메인) 탭바: 마이페이지 제외
-  const visibleRoutes = state.routes.filter(
-    (route) => route.name !== "mypage"
-  );
-
+  // ✅ 기본(메인) 탭바
   return (
     <View style={wrapStyle}>
-      {visibleRoutes.map((route, index) => {
+      {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const focused = state.index === state.routes.findIndex((r) => r.key === route.key);
-
         const label =
           options.tabBarLabel?.toString() ?? options.title ?? route.name;
-
         const color = focused ? colors.BLACK : colors.INACTIVE;
 
         const onPress = () => {
@@ -176,7 +128,6 @@ export default function SketchTabBar({
             target: route.key,
             canPreventDefault: true,
           });
-
           if (!focused && !event.defaultPrevented) {
             navigation.navigate(route.name);
           }
@@ -187,31 +138,20 @@ export default function SketchTabBar({
         };
 
         return (
-          <View
+          <TabBarItem
             key={route.key}
-            style={[
-              styles.itemWrap,
-              index !== visibleRoutes.length - 1 && styles.dividerRight,
-            ]}
-          >
-            <Pressable
-              onPress={onPress}
-              onLongPress={onLongPress}
-              style={({ pressed }) => [
-                styles.item,
-                pressed && { opacity: 0.7 },
-              ]}
-              android_ripple={{ color: colors.BLACK, borderless: false }}
-            >
-              {options.tabBarIcon
+            showDividerRight={index !== state.routes.length - 1}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            icon={
+              options.tabBarIcon
                 ? options.tabBarIcon({ focused, color, size: 20 })
-                : null}
-
-              <Text style={[styles.label, { color }]} numberOfLines={1}>
-                {label}
-              </Text>
-            </Pressable>
-          </View>
+                : null
+            }
+            label={label}
+            color={color}
+            rippleColor={colors.BLACK}
+          />
         );
       })}
     </View>
@@ -225,7 +165,6 @@ const styles = StyleSheet.create({
     borderTopColor: colors.BORDER,
     backgroundColor: colors.WHITE,
     paddingTop: 8,
-
     ...Platform.select({
       android: { elevation: 10 },
       ios: {
@@ -236,16 +175,4 @@ const styles = StyleSheet.create({
       },
     }),
   },
-
-  itemWrap: { flex: 1 },
-  dividerRight: { borderRightWidth: 1, borderRightColor: colors.BORDER },
-
-  item: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-  },
-
-  label: { fontSize: 12, marginTop: 2 },
 });

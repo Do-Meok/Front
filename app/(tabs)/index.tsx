@@ -44,7 +44,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <HomeHeader
         onPressBell={() => {}}
-        onPressProfile={() => router.push("/(tabs)/mypage")}
+        onPressProfile={() => router.push("/mypage")}
       />
       <View style={styles.page}>
         {/* 오늘의 추천 (보유 식재료 기반, 레시피 추천과 동일 API) */}
