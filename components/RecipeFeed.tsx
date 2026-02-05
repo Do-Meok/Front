@@ -4,7 +4,10 @@ import FeaturedRecipeCarousel, {
 import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
 import { colors } from "@/constants";
+import useCreateRecipeDetails from "@/hooks/assistant/useCreateRecipeDetails";
 import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
+import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
+import type { RecipeRecommendationItem } from "@/types";
 import { getSecureStore } from "@/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -68,6 +71,44 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
     refetch: refetchRecommendations,
     isRefetching: isRecommendRefetching,
   } = useGetRecommendationsRecipes();
+
+  const createRecipeDetailsMutation = useCreateRecipeDetails();
+  const saveRecipeMutation = useSaveRecipe();
+
+  const handlePressRecipeItem = (item: FeaturedRecipe) => {
+    const getRecommendationPayload = (): RecipeRecommendationItem | null => {
+      if (mode === "recommend" && recommendationsData?.recipes?.length) {
+        const match = item.id.match(/^recommend-(\d+)-/);
+        const idx = match ? parseInt(match[1], 10) : -1;
+        if (idx >= 0 && recommendationsData.recipes[idx])
+          return recommendationsData.recipes[idx];
+      }
+      if (mode === "list") {
+        return {
+          food: item.title,
+          use_ingredients: [],
+          difficulty: 3,
+        };
+      }
+      return null;
+    };
+
+    const payload = getRecommendationPayload();
+    if (!payload) {
+      router.push(`/recipes/${item.id}`);
+      return;
+    }
+
+    createRecipeDetailsMutation.mutate(payload, {
+      onSuccess: (detail) => {
+        saveRecipeMutation.mutate(detail, {
+          onSuccess: (saved) => {
+            router.push(`/recipes/${saved.id}`);
+          },
+        });
+      },
+    });
+  };
 
   useEffect(() => {
     if (mode === "recommend") {
@@ -161,7 +202,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
             <FeaturedRecipeCarousel
               titleLabel="추천 메뉴"
               items={recommendCarouselItems}
-              onPressItem={(item) => router.push(`/recipes/${item.id}`)}
+              onPressItem={handlePressRecipeItem}
               heroImageHeight={280}
             />
             <View style={styles.refetchBtnWrap}>
@@ -224,7 +265,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
             <FeaturedRecipeCarousel
               titleLabel="레시피"
               items={featuredItems}
-              onPressItem={(item) => router.push(`/recipes/${item.id}`)}
+              onPressItem={handlePressRecipeItem}
             />
           )}
         </>

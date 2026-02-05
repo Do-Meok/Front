@@ -45,7 +45,6 @@ export default function FeaturedRecipeCarousel({
   titleLabel?: string;
   items: FeaturedRecipe[];
   onPressItem?: (item: FeaturedRecipe) => void;
-  /** 카드 이미지 영역 높이 (추천 페이지에서만 더 크게 쓸 수 있음) */
   heroImageHeight?: number;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);

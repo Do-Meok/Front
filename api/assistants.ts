@@ -2,6 +2,7 @@ import {
   CreateRecipeDetailsResponse,
   GetInstantRecommendationsResponse,
   GetRecipeRecommendationsResponse,
+  RecipeRecommendationItem,
   SearchRecipesByNameResponse
 } from "@/types";
 import axiosInstance, { PREFIX } from "./axios";
@@ -14,13 +15,13 @@ async function getRecommendationsRecipes(): Promise<GetRecipeRecommendationsResp
   return data;
 }
 
-/** 선택한 메뉴 상세 조리법 생성 **/
+/** 선택한 메뉴 상세 조리법 생성 (단일 객체: food, use_ingredients, difficulty) */
 async function createRecipeDetails(
-  recipeBody: GetRecipeRecommendationsResponse
+  body: RecipeRecommendationItem
 ): Promise<CreateRecipeDetailsResponse> {
   const { data } = await axiosInstance.post<CreateRecipeDetailsResponse>(
-    `${PREFIX}/assistant/assistant/detail`,
-    recipeBody
+    `${PREFIX}/assistant/detail`,
+    body
   );
 
   return data;

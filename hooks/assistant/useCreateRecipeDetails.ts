@@ -8,7 +8,7 @@ function useCreateRecipeDetails() {
   return useMutation({
     mutationFn: createRecipeDetails,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [queryKey.ASSISTANT] });
+      queryClient.invalidateQueries({ queryKey: [queryKey.ASSISTANT, queryKey.RECIPES] });
     },
     onError: (error: any) => {
       const errorMessage =
