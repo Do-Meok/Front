@@ -6,6 +6,7 @@ import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import { colors } from "@/constants";
 import useCreateRecipeDetails from "@/hooks/assistant/useCreateRecipeDetails";
 import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
+import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
 import type { RecipeRecommendationItem } from "@/types";
 import { router } from "expo-router";
@@ -33,6 +34,7 @@ export default function HomeScreen() {
     error: recommendError,
   } = useGetRecommendationsRecipes();
 
+  const { data: savedRecipes } = useGetRecipes();
   const createRecipeDetailsMutation = useCreateRecipeDetails();
   const saveRecipeMutation = useSaveRecipe();
 
@@ -46,6 +48,12 @@ export default function HomeScreen() {
 
     if (!payload) {
       router.push(`/recipes/${item.id}?from=home`);
+      return;
+    }
+
+    const existing = (savedRecipes ?? []).find((r) => r.food === payload.food);
+    if (existing) {
+      router.push(`/recipes/${existing.id}?from=home`);
       return;
     }
 

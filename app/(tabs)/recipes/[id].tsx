@@ -2,19 +2,10 @@ import PageHeader from "@/components/PageHeader";
 import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import type { SaveRecipeResponse } from "@/types";
-import { fmtYYYYMMDD } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import React, { useMemo } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function RecipeDetailScreen() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
@@ -36,9 +27,6 @@ export default function RecipeDetailScreen() {
       (null as SaveRecipeResponse | null)
     );
   }, [recipes, id]);
-
-  const [open, setOpen] = useState(false);
-  const [date, setDate] = useState(fmtYYYYMMDD(new Date()));
 
   const renderBody = () => {
     if (isLoading) {
@@ -111,54 +99,7 @@ export default function RecipeDetailScreen() {
             </View>
           </>
         ) : null}
-
-        {/* CTA */}
-        <Pressable onPress={() => setOpen(true)} style={styles.cta}>
-          <Text style={styles.ctaText}>요리 기록에 추가하기</Text>
-        </Pressable>
       </ScrollView>
-
-      {/* 날짜 모달 */}
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}
-      >
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetTop}>
-            <Pressable onPress={() => setOpen(false)} style={styles.iconBtn}>
-              <Ionicons name="close" size={20} color="#111" />
-            </Pressable>
-            <Text style={styles.sheetTitle}>요리 기록</Text>
-            <View style={{ width: 36 }} />
-          </View>
-
-          <Text style={styles.label}>날짜(YYYY-MM-DD)</Text>
-          <View style={styles.row}>
-            <TextInput
-              value={date}
-              onChangeText={setDate}
-              style={styles.input}
-            />
-            <View style={styles.cal}>
-              <Ionicons name="calendar-outline" size={18} color="#111" />
-            </View>
-          </View>
-
-          <Pressable
-            style={styles.primary}
-            onPress={() => {
-              // TODO: 여기서 실제 저장(서버/로컬) 연결하면 됨
-              setOpen(false);
-              router.replace("/recipes"); // 목록으로
-            }}
-          >
-            <Text style={styles.primaryText}>추가</Text>
-          </Pressable>
-        </View>
-      </Modal>
       </>
     );
   };
@@ -285,69 +226,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "900",
   },
-
-  cta: {
-    marginTop: 14,
-    borderRadius: 14,
-    backgroundColor: "#111",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: "center",
-  },
-  ctaText: { color: "#fff", fontWeight: "900" },
-
-  backdrop: { flex: 1, backgroundColor: "#00000066" },
-  sheet: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: 26,
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#ededed",
-  },
-  sheetTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  sheetTitle: { fontSize: 14, fontWeight: "900", color: "#111" },
-
-  label: {
-    marginTop: 10,
-    marginBottom: 6,
-    color: "#666",
-    fontWeight: "800",
-    fontSize: 12,
-  },
-  row: { flexDirection: "row", gap: 8, alignItems: "center" },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#e6e6e6",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: "#111",
-    fontWeight: "700",
-  },
-  cal: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e6e6e6",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primary: {
-    marginTop: 12,
-    backgroundColor: "#111",
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  primaryText: { color: "#fff", fontWeight: "900" },
 });

@@ -38,11 +38,14 @@ function toImageSource(
 
 export default function FeaturedRecipeCarousel({
   titleLabel = "추천 메뉴",
+  description,
   items,
   onPressItem,
   heroImageHeight = DEFAULT_HERO_HEIGHT,
 }: {
   titleLabel?: string;
+  /** 제목 아래 표시할 설명 텍스트 */
+  description?: string;
   items: FeaturedRecipe[];
   onPressItem?: (item: FeaturedRecipe) => void;
   heroImageHeight?: number;
@@ -52,6 +55,9 @@ export default function FeaturedRecipeCarousel({
   return (
     <View style={styles.wrap}>
       <Text style={styles.sectionTitle}>{titleLabel}</Text>
+      {description ? (
+        <Text style={styles.sectionDesc}>{description}</Text>
+      ) : null}
 
       <FlatList
         data={items}
@@ -118,8 +124,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "900",
     marginHorizontal: 16,
-    marginBottom: 10,
+    marginBottom: 4,
     color: "#111",
+  },
+  sectionDesc: {
+    fontSize: 13,
+    color: "#666",
+    marginHorizontal: 16,
+    marginBottom: 10,
+    lineHeight: 18,
   },
   card: {
     width: CARD_W,

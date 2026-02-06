@@ -1,12 +1,14 @@
 import FeaturedRecipeCarousel, {
     type FeaturedRecipe,
 } from "@/components/FeaturedRecipeCarousel";
+import RecipeLogList from "@/components/RecipeLogList";
 import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
 import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import { colors } from "@/constants";
 import useCreateRecipeDetails from "@/hooks/assistant/useCreateRecipeDetails";
 import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
+import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
 import type { RecipeRecommendationItem } from "@/types";
 import { getSecureStore } from "@/utils/secureStore";
@@ -76,8 +78,18 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
 
   const createRecipeDetailsMutation = useCreateRecipeDetails();
   const saveRecipeMutation = useSaveRecipe();
+  const {
+    data: savedRecipes,
+    isLoading: isLogLoading,
+    error: logError,
+    refetch: refetchLog,
+  } = useGetRecipes();
 
   const handlePressRecipeItem = (item: FeaturedRecipe) => {
+    if (mode === "log") {
+      router.push(`/recipes/${item.id}`);
+      return;
+    }
     const getRecommendationPayload = (): RecipeRecommendationItem | null => {
       if (mode === "recommend" && recommendationsData?.recipes?.length) {
         const match = item.id.match(/^recommend-(\d+)-/);
@@ -101,6 +113,12 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
       return;
     }
 
+    const existing = (savedRecipes ?? []).find((r) => r.food === payload.food);
+    if (existing) {
+      router.push(`/recipes/${existing.id}`);
+      return;
+    }
+
     createRecipeDetailsMutation.mutate(payload, {
       onSuccess: (detail) => {
         saveRecipeMutation.mutate(detail, {
@@ -119,10 +137,20 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
   }, [mode]);
 
   const baseList = useMemo(() => {
-    if (mode === "log") return [];
+    if (mode === "log") {
+      return (savedRecipes ?? []).map((r) => ({
+        id: String(r.id),
+        title: r.food,
+        desc: r.created_at ? `저장일: ${r.created_at.slice(0, 10)}` : "",
+        rating: 0,
+        cookMin: 0,
+        image: undefined,
+        tags: [] as string[],
+      }));
+    }
     if (mode === "recommend") return [];
     return MOCK_RECIPES;
-  }, [mode]);
+  }, [mode, savedRecipes]);
 
   const list = useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -136,12 +164,12 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
     );
   }, [baseList, q]);
 
-  const featuredItems = useMemo(() => {
+  const featuredItems = useMemo((): FeaturedRecipe[] => {
     return list.map((r) => ({
       id: r.id,
       title: r.title,
       desc: r.desc,
-      image: r.image,
+      ...(r.image !== undefined && { image: r.image }),
     }));
   }, [list]);
 
@@ -214,6 +242,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
           <View style={styles.recommendContent}>
             <FeaturedRecipeCarousel
               titleLabel="추천 메뉴"
+              description="보유하고 계신 식재료 기반으로 메뉴 4가지를 추천합니다."
               items={recommendCarouselItems}
               onPressItem={handlePressRecipeItem}
               heroImageHeight={280}
@@ -244,13 +273,58 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
       <PageHeader title={title} />
 
       {mode === "log" ? (
-        <View style={styles.emptyWrap}>
-          <Ionicons name="calendar-outline" size={28} color="#999" />
-          <Text style={styles.emptyTitle}>요리 기록이 비어있어요</Text>
-          <Text style={styles.emptyDesc}>
-            레시피 상세에서 “요리 기록에 추가하기”를 눌러보세요.
-          </Text>
-        </View>
+        isLogLoading && !savedRecipes ? (
+          <View style={styles.emptyWrap}>
+            <ActivityIndicator size="large" color={colors.BLACK} />
+            <Text style={styles.emptyDesc}>요리 기록을 불러오는 중...</Text>
+          </View>
+        ) : logError && !savedRecipes ? (
+          <QueryErrorView
+            error={logError}
+            hasToken={true}
+            onRetry={() => refetchLog()}
+          />
+        ) : (
+          <>
+            <View style={styles.search}>
+              <Ionicons name="search-outline" size={18} color="#666" />
+              <TextInput
+                value={q}
+                onChangeText={setQ}
+                placeholder="요리명·저장일 검색"
+                placeholderTextColor="#999"
+                style={styles.searchInput}
+              />
+              {q.length > 0 && (
+                <Pressable onPress={() => setQ("")} style={styles.clearBtn}>
+                  <Ionicons name="close-circle" size={18} color="#999" />
+                </Pressable>
+              )}
+            </View>
+            {list.length === 0 ? (
+              baseList.length === 0 ? (
+                <View style={styles.emptyWrap}>
+                  <Ionicons name="calendar-outline" size={28} color="#999" />
+                  <Text style={styles.emptyTitle}>요리 기록이 비어있어요</Text>
+                  <Text style={styles.emptyDesc}>레시피 상세에서 요리 기록에 추가하기를 눌러보세요.</Text>
+                </View>
+              ) : (
+                <View style={styles.emptyWrap}>
+                  <Ionicons name="search-outline" size={28} color="#999" />
+                  <Text style={styles.emptyTitle}>검색 결과가 없어요</Text>
+                  <Text style={styles.emptyDesc}>다른 키워드로 검색해보세요.</Text>
+                </View>
+              )
+            ) : (
+              <View style={styles.logListWrap}>
+                <RecipeLogList
+                  items={featuredItems}
+                  onPressItem={handlePressRecipeItem}
+                />
+              </View>
+            )}
+          </>
+        )
       ) : (
         <>
           <View style={styles.search}>
@@ -309,6 +383,8 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, color: "#111" },
   clearBtn: { paddingLeft: 4 },
+
+  logListWrap: { flex: 1, marginTop: 4 },
 
   emptyWrap: {
     flex: 1,
