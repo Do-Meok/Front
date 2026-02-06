@@ -3,6 +3,7 @@ import FeaturedRecipeCarousel, {
 } from "@/components/FeaturedRecipeCarousel";
 import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
+import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import { colors } from "@/constants";
 import useCreateRecipeDetails from "@/hooks/assistant/useCreateRecipeDetails";
 import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
@@ -14,6 +15,7 @@ import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
+    Modal,
     Pressable,
     StyleSheet,
     Text,
@@ -162,6 +164,17 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
         ? "요리 기록"
         : "레시피";
 
+  const isRecipeLoading =
+    createRecipeDetailsMutation.isPending || saveRecipeMutation.isPending;
+
+  const loadingModal = (
+    <Modal visible={isRecipeLoading} transparent animationType="fade">
+      <View style={styles.loadingModal}>
+        <RecipeLoadingScreen message="레시피를 받아오는 중입니다." />
+      </View>
+    </Modal>
+  );
+
   if (mode === "recommend") {
     if (isRecommendLoading && !recommendationsData) {
       return (
@@ -221,6 +234,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
             </View>
           </View>
         )}
+        {loadingModal}
       </View>
     );
   }
@@ -270,6 +284,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
           )}
         </>
       )}
+      {loadingModal}
     </View>
   );
 }
@@ -326,4 +341,9 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   refetchBtnText: { fontSize: 14, fontWeight: "700", color: "#111" },
+
+  loadingModal: {
+    flex: 1,
+    backgroundColor: colors.WHITE,
+  },
 });

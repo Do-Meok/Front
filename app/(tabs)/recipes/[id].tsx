@@ -1,4 +1,5 @@
 import PageHeader from "@/components/PageHeader";
+import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import type { SaveRecipeResponse } from "@/types";
 import { fmtYYYYMMDD } from "@/utils/date";
@@ -6,7 +7,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -15,11 +15,18 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/constants";
 
 export default function RecipeDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data: recipes, isLoading, error } = useGetRecipes();
+
+  const goBack = () => {
+    if (from === "home") {
+      router.replace("/(tabs)");
+    } else {
+      router.back();
+    }
+  };
 
   const detail = useMemo((): SaveRecipeResponse | null => {
     const key = String(id ?? "");
@@ -33,69 +40,31 @@ export default function RecipeDetailScreen() {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(fmtYYYYMMDD(new Date()));
 
-  if (isLoading) {
-    return (
-      <View style={styles.page}>
-        <PageHeader
-          title="레시피 상세"
-          leftChild={
-            <Pressable onPress={() => router.back()} style={styles.iconBtn}>
-              <Ionicons name="arrow-back" size={22} color="#111" />
-            </Pressable>
-          }
-        />
-        <View style={styles.centerWrap}>
-          <ActivityIndicator size="large" color={colors.BLACK} />
-          <Text style={styles.emptyDesc}>레시피를 불러오는 중...</Text>
-        </View>
-      </View>
-    );
-  }
-
-  if (error || !detail) {
-    return (
-      <View style={styles.page}>
-        <PageHeader
-          title="레시피 상세"
-          leftChild={
-            <Pressable onPress={() => router.back()} style={styles.iconBtn}>
-              <Ionicons name="arrow-back" size={22} color="#111" />
-            </Pressable>
-          }
-        />
+  const renderBody = () => {
+    if (isLoading) {
+      return (
+        <RecipeLoadingScreen message="레시피를 받아오는 중입니다." />
+      );
+    }
+    if (error || !detail) {
+      return (
         <View style={styles.centerWrap}>
           <Ionicons name="document-text-outline" size={40} color="#999" />
           <Text style={styles.emptyTitle}>레시피를 찾을 수 없어요</Text>
           <Text style={styles.emptyDesc}>
             목록에서 레시피를 선택하면 조리법이 생성됩니다.
           </Text>
-          <Pressable onPress={() => router.back()} style={styles.cta}>
-            <Text style={styles.ctaText}>목록으로</Text>
+          <Pressable onPress={goBack} style={styles.backToListButton}>
+            <Text style={styles.backToListButtonText}>목록으로</Text>
           </Pressable>
         </View>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.page}>
-      <PageHeader
-        title="레시피 상세"
-        leftChild={
-          <Pressable onPress={() => router.back()} style={styles.iconBtn}>
-            <Ionicons name="arrow-back" size={22} color="#111" />
-          </Pressable>
-        }
-        rightChild={
-          <Pressable onPress={() => {}} style={styles.iconBtn}>
-            <Ionicons name="share-social-outline" size={20} color="#111" />
-          </Pressable>
-        }
-      />
-
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-        {/* 헤더 카드 */}
-        <View style={styles.hero}>
+      );
+    }
+    return (
+      <>
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+          {/* 헤더 카드 */}
+          <View style={styles.hero}>
           <View style={styles.heroIcon}>
             <Ionicons name="restaurant-outline" size={28} color="#111" />
           </View>
@@ -190,6 +159,28 @@ export default function RecipeDetailScreen() {
           </Pressable>
         </View>
       </Modal>
+      </>
+    );
+  };
+
+  return (
+    <View style={styles.page}>
+      <PageHeader
+        title="레시피 상세"
+        leftChild={
+          <Pressable onPress={goBack} style={styles.iconBtn}>
+            <Ionicons name="arrow-back" size={22} color="#111" />
+          </Pressable>
+        }
+        rightChild={
+          detail ? (
+            <Pressable onPress={() => {}} style={styles.iconBtn}>
+              <Ionicons name="share-social-outline" size={20} color="#111" />
+            </Pressable>
+          ) : undefined
+        }
+      />
+      {renderBody()}
     </View>
   );
 }
@@ -279,11 +270,28 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, color: "#333", fontWeight: "700", lineHeight: 18 },
   tipText: { color: "#333", fontWeight: "600", lineHeight: 20 },
 
+  backToListButton: {
+    marginTop: 14,
+    minWidth: 160,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    backgroundColor: "#111",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backToListButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+
   cta: {
     marginTop: 14,
     borderRadius: 14,
     backgroundColor: "#111",
     paddingVertical: 14,
+    paddingHorizontal: 20,
     alignItems: "center",
   },
   ctaText: { color: "#fff", fontWeight: "900" },

@@ -1,13 +1,18 @@
-import type { FeaturedRecipe } from "@/components/FeaturedRecipeCarousel";
 import ExpiringCarousel from "@/components/ExpiringCarousel";
+import type { FeaturedRecipe } from "@/components/FeaturedRecipeCarousel";
 import FeaturedRecipeCarousel from "@/components/FeaturedRecipeCarousel";
 import HomeHeader from "@/components/HomeHeader";
-import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
+import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import { colors } from "@/constants";
+import useCreateRecipeDetails from "@/hooks/assistant/useCreateRecipeDetails";
+import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
+import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
+import type { RecipeRecommendationItem } from "@/types";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
 import {
   ActivityIndicator,
+  Modal,
   StyleSheet,
   Text,
   View,
@@ -28,6 +33,33 @@ export default function HomeScreen() {
     error: recommendError,
   } = useGetRecommendationsRecipes();
 
+  const createRecipeDetailsMutation = useCreateRecipeDetails();
+  const saveRecipeMutation = useSaveRecipe();
+
+  const handlePressRecipeItem = (item: FeaturedRecipe) => {
+    const match = item.id.match(/^recommend-(\d+)-/);
+    const idx = match ? parseInt(match[1], 10) : -1;
+    const payload: RecipeRecommendationItem | null =
+      idx >= 0 && recommendationsData?.recipes?.[idx]
+        ? recommendationsData.recipes[idx]
+        : null;
+
+    if (!payload) {
+      router.push(`/recipes/${item.id}?from=home`);
+      return;
+    }
+
+    createRecipeDetailsMutation.mutate(payload, {
+      onSuccess: (detail) => {
+        saveRecipeMutation.mutate(detail, {
+          onSuccess: (saved) => {
+            router.push(`/recipes/${saved.id}?from=home`);
+          },
+        });
+      },
+    });
+  };
+
   const featuredItems = useMemo((): FeaturedRecipe[] => {
     const recipes = recommendationsData?.recipes ?? [];
     return recipes.map((r, i) => ({
@@ -39,6 +71,9 @@ export default function HomeScreen() {
       difficulty: r.difficulty,
     }));
   }, [recommendationsData?.recipes]);
+
+  const isRecipeLoading =
+    createRecipeDetailsMutation.isPending || saveRecipeMutation.isPending;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -63,7 +98,8 @@ export default function HomeScreen() {
           <FeaturedRecipeCarousel
             titleLabel="오늘의 추천"
             items={featuredItems}
-            onPressItem={(item) => router.push(`/recipes/${item.id}`)}
+            onPressItem={handlePressRecipeItem}
+            heroImageHeight={280}
           />
         ) : null}
 
@@ -76,6 +112,12 @@ export default function HomeScreen() {
           }}
         />
       </View>
+
+      <Modal visible={isRecipeLoading} transparent animationType="fade">
+        <View style={styles.loadingModal}>
+          <RecipeLoadingScreen message="레시피를 받아오는 중입니다." />
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -116,5 +158,9 @@ const styles = StyleSheet.create({
   recommendLoadingText: {
     fontSize: 13,
     color: "#777",
+  },
+  loadingModal: {
+    flex: 1,
+    backgroundColor: colors.WHITE,
   },
 });
