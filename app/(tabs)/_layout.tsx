@@ -57,21 +57,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 냉장고 */}
-      <Tabs.Screen
-        name="fridge"
-        options={{
-          title: "냉장고",
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons
-              name={focused ? "snow" : "snow-outline"}
-              size={size ?? 20}
-              color={color}
-            />
-          ),
-        }}
-      />
-
       {/* 장보기 리스트 */}
       <Tabs.Screen
         name="shopping-list"

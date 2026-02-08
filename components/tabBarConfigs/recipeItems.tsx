@@ -38,7 +38,7 @@ export function getRecipeTabBarItems(pathname: string): TabBarItem[] {
     },
     {
       key: "recommend",
-      label: "레시피 추천",
+      label: "AI 레시피 추천",
       focused: pathname.startsWith("/recipes/recommend"),
       icon: (focused: boolean, color: string) => (
         <Ionicons

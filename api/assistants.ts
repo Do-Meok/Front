@@ -29,9 +29,9 @@ async function createRecipeDetails(
 
 /** 요리 이름으로 검색 **/
 async function searchRecipesByName(name: string): Promise<SearchRecipesByNameResponse> {
-  const { data } = await axiosInstance.get<SearchRecipesByNameResponse>(
+  const { data } = await axiosInstance.post<SearchRecipesByNameResponse>(
     `${PREFIX}/assistant/search`,
-    { params: { name } }
+    { food: name }
   );
 
   return data;

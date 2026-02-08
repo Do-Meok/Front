@@ -6,15 +6,17 @@ import { daysLeft } from "@/utils/date";
 import { getSecureStore } from "@/utils/secureStore";
 import { fromKoreanStorageType, toKoreanStorageType } from "@/utils/storageType";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  ActivityIndicator,
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from "react-native";
 
 type Filter = "전체" | "미분류" | StorageType | "냉장" | "냉동" | "실온";
@@ -89,7 +91,7 @@ export default function FridgeSearchScreen() {
 
   return (
     <View style={styles.page}>
-      <PageHeader title="냉장고 재료 검색" />
+      <PageHeader title="냉장고 재료 검색" leftChild={<Pressable onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#111" /></Pressable>}/>
 
       <View style={styles.searchBox}>
         <Ionicons name="search" size={20} color="#999" />
@@ -106,12 +108,17 @@ export default function FridgeSearchScreen() {
         {(["전체", "미분류", "냉장", "냉동", "실온"] as const).map((t) => {
           const active = filter === t;
           return (
-            <Text
+            <Pressable
               key={t}
+              onPress={() => setFilter(t)}
               style={[styles.filterPill, active && styles.filterPillActive]}
             >
-              {t}
-            </Text>
+              <Text
+                style={[styles.filterPillText, active && styles.filterPillTextActive]}
+              >
+                {t}
+              </Text>
+            </Pressable>
           );
         })}
       </View>
@@ -221,8 +228,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f2f4ff",
     borderColor: "#d9dcff",
   },
-  filterText: { fontSize: 12, fontWeight: "700", color: "#666" },
-  filterTextActive: { color: "#111" },
+  filterPillText: { fontSize: 12, fontWeight: "700", color: "#666" },
+  filterPillTextActive: { color: "#111" },
   listTitle: { marginTop: 12, marginBottom: 10, color: "#777", fontSize: 12 },
   loadingContainer: {
     flex: 1,

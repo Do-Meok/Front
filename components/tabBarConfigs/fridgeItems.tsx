@@ -51,7 +51,9 @@ export function getFridgeTabBarItems(pathname: string): TabBarItem[] {
     {
       key: "add",
       label: "냉장고 식재료 넣기",
-      focused: pathname.startsWith("/fridge/add"),
+      focused:
+        pathname.startsWith("/fridge/add") &&
+        !pathname.startsWith("/fridge/add-fridge"),
       icon: (focused: boolean, color: string) => (
         <Ionicons
           name={focused ? "add-circle" : "add-circle-outline"}

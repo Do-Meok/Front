@@ -11,7 +11,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import TabBarItem from "./TabBarItem";
 import {
-  getFridgeTabBarItems,
   getIngredientTabBarItems,
   getRecipeTabBarItems,
 } from "./tabBarConfigs";
@@ -28,12 +27,9 @@ export default function SketchTabBar({
   const inIngredients =
     pathname === "/ingredients" || pathname.startsWith("/ingredients/");
   const inRecipes = pathname === "/recipes" || pathname.startsWith("/recipes/");
-  const inFridge =
-    pathname === "/fridge" || pathname.startsWith("/fridge/");
 
   const ingredientItems = getIngredientTabBarItems(pathname);
   const recipeItems = getRecipeTabBarItems(pathname);
-  const fridgeItems = getFridgeTabBarItems(pathname);
 
   const wrapStyle: StyleProp<ViewStyle> = [
     styles.bar,
@@ -76,29 +72,6 @@ export default function SketchTabBar({
             <TabBarItem
               key={item.key}
               showDividerRight={index !== recipeItems.length - 1}
-              onPress={() => {
-                if (!item.focused) item.go();
-              }}
-              icon={item.icon(item.focused, color)}
-              label={item.label}
-              color={color}
-            />
-          );
-        })}
-      </View>
-    );
-  }
-
-  // ✅ 냉장고 영역이면 냉장고 전용 탭바
-  if (inFridge) {
-    return (
-      <View style={wrapStyle}>
-        {fridgeItems.map((item, index) => {
-          const color = item.focused ? colors.BLACK : colors.INACTIVE;
-          return (
-            <TabBarItem
-              key={item.key}
-              showDividerRight={index !== fridgeItems.length - 1}
               onPress={() => {
                 if (!item.focused) item.go();
               }}

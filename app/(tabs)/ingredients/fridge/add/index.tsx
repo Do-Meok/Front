@@ -4,18 +4,19 @@ import useCreateIngredient from "@/hooks/ingredients/useCreateIngredient";
 import useUpdateIngredient from "@/hooks/ingredients/useUpdateIngredient";
 import { fromKoreanStorageType } from "@/utils/storageType";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 export default function FridgeAddScreen() {
@@ -72,7 +73,7 @@ export default function FridgeAddScreen() {
 
   return (
     <View style={styles.page}>
-      <PageHeader title="냉장고 식재료 넣기" />
+      <PageHeader title="냉장고 식재료 넣기" leftChild={<Pressable onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#111" /></Pressable>}/>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
