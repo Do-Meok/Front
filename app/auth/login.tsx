@@ -9,13 +9,12 @@ import { router } from "expo-router";
 import React from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -69,17 +68,15 @@ export default function LoginFormScreen() {
               <Text style={styles.primaryBtnText}>로그인</Text>
             </Pressable>
 
-            {/* 회원가입 / 비밀번호 찾기 */}
+            {/* 회원가입 / 이메일·비밀번호 찾기 */}
             <View style={styles.row}>
               <Pressable onPress={() => router.push("/auth/signup")}>
                 <Text style={styles.link}>회원가입</Text>
               </Pressable>
-
-              <Pressable
-                onPress={() =>
-                  Alert.alert("임시", "비밀번호 찾기 화면을 붙이면 돼요")
-                }
-              >
+              <Pressable onPress={() => router.push("/auth/find-email")}>
+                <Text style={styles.link}>이메일 찾기</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push("/auth/find-password")}>
                 <Text style={styles.link}>비밀번호 찾기</Text>
               </Pressable>
             </View>

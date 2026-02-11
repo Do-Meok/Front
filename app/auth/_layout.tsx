@@ -32,6 +32,22 @@ export default function AuthLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="find-email"
+        options={{ title: "이메일 찾기", headerShown: false }}
+      />
+      <Stack.Screen
+        name="find-password"
+        options={{ title: "비밀번호 찾기", headerShown: false }}
+      />
+      <Stack.Screen
+        name="change-password"
+        options={{ title: "비밀번호 변경", headerShown: false }}
+      />
+      <Stack.Screen
+        name="change-nickname"
+        options={{ title: "닉네임 변경", headerShown: false }}
+      />
     </Stack>
   );
 }

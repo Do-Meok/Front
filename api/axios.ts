@@ -1,9 +1,9 @@
-import { refreshAccessToken, clearStoredTokens } from "@/api/authRefresh";
+import { clearStoredTokens, refreshAccessToken } from "@/api/authRefresh";
 import { getSecureStore } from "@/utils/secureStore";
 import axios from "axios";
 import { router } from "expo-router";
 
-const API_URL = "https://domeok.augustzero.duckdns.org";
+export const API_URL = "https://domeok.augustzero.duckdns.org";
 
 export const PREFIX = "/api/v1";
 

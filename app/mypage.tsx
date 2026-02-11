@@ -1,4 +1,6 @@
 import { colors } from "@/constants";
+import useLogout from "@/hooks/auth/useLogout";
+import useRefreshToken from "@/hooks/auth/useRefreshToken";
 import useAuth from "@/hooks/useAuth";
 import { useNavigationContext } from "@/providers/NavigationProvider";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,6 +37,8 @@ export default function MyPageScreen() {
   const { userInfoQuery } = useAuth();
   const { data: userInfo, isLoading, error, refetch, isRefetching } = userInfoQuery;
   const { isOnboardingCompleted, setOnboardingCompleted } = useNavigationContext();
+  const logoutMutation = useLogout();
+  const refreshTokenMutation = useRefreshToken();
 
   // 401 또는 서버 500(토큰 만료 메시지) → 로그인하러 가기
   const status = (error as any)?.response?.status;
@@ -161,6 +165,52 @@ export default function MyPageScreen() {
             </View>
           )}
 
+          {/* 설정 메뉴 (로그인 상태) */}
+          <View style={styles.menuSection}>
+            <Text style={styles.menuSectionTitle}>설정</Text>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => router.push("/auth/find-email")}
+            >
+              <Text style={styles.menuItemText}>이메일 찾기</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
+            </Pressable>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => router.push("/auth/find-password")}
+            >
+              <Text style={styles.menuItemText}>비밀번호 찾기</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
+            </Pressable>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => router.push("/auth/change-password")}
+            >
+              <Text style={styles.menuItemText}>비밀번호 변경</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
+            </Pressable>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => router.push("/auth/change-nickname")}
+            >
+              <Text style={styles.menuItemText}>닉네임 변경</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
+            </Pressable>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => refreshTokenMutation.mutate(undefined, {
+                onSuccess: () => refetch(),
+                onError: () => {},
+              })}
+              disabled={refreshTokenMutation.isPending}
+            >
+              <Text style={styles.menuItemText}>
+                {refreshTokenMutation.isPending ? "세션 연장 중…" : "세션 연장"}
+              </Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
+            </Pressable>
+          </View>
+
           {/* 임시: 온보딩 다시 보기 on/off */}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>온보딩 다시 보기 (임시)</Text>
@@ -180,6 +230,19 @@ export default function MyPageScreen() {
               thumbColor="#fff"
             />
           </View>
+
+          {/* 로그아웃 */}
+          <Pressable
+            style={[styles.logoutBtn, logoutMutation.isPending && styles.logoutBtnDisabled]}
+            onPress={() => logoutMutation.mutate(undefined, {
+              onSuccess: () => router.replace("/auth"),
+            })}
+            disabled={logoutMutation.isPending}
+          >
+            <Text style={styles.logoutBtnText}>
+              {logoutMutation.isPending ? "로그아웃 중…" : "로그아웃"}
+            </Text>
+          </Pressable>
         </View>
       </View>
     </SafeAreaView>
@@ -307,5 +370,46 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.INACTIVE,
     fontWeight: "500",
+  },
+  menuSection: {
+    marginTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: colors.BORDER,
+    paddingTop: 16,
+  },
+  menuSectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.INACTIVE,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
+  },
+  menuItemText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.BLACK,
+  },
+  logoutBtn: {
+    marginTop: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+  },
+  logoutBtnDisabled: { opacity: 0.6 },
+  logoutBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.BLACK,
   },
 });

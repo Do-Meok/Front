@@ -1,16 +1,17 @@
+import { API_URL, PREFIX } from "@/api/axios";
 import { colors } from "@/constants";
 import { setGuestChosen } from "@/utils/guestMode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Linking from "expo-linking";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const GUEST_STORAGE_KEY = "is_guest";
+const KAKAO_LOGIN_URL = `${API_URL}${PREFIX}/users/kakao`;
 
 export default function AuthButton() {
   const onPressKakao = () => {
-    // 카카오 로그인 (임시로 메인 탭으로 이동)
-    // TODO: 실제 카카오 로그인 구현 필요
-    router.replace("/(tabs)");
+    Linking.openURL(KAKAO_LOGIN_URL);
   };
 
   const onPressCommon = () => {
@@ -41,6 +42,16 @@ export default function AuthButton() {
       <Pressable style={styles.ghostBtn} onPress={onPressGuest}>
         <Text style={styles.ghostBtnText}>로그인 없이 시작</Text>
       </Pressable>
+
+      <View style={styles.footerLinks}>
+        <Pressable onPress={() => router.push("/auth/find-email")}>
+          <Text style={styles.footerLinkText}>이메일 찾기</Text>
+        </Pressable>
+        <Text style={styles.footerDivider}>|</Text>
+        <Pressable onPress={() => router.push("/auth/find-password")}>
+          <Text style={styles.footerLinkText}>비밀번호 찾기</Text>
+        </Pressable>
+      </View>
     </>
   );
 }
@@ -87,5 +98,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.GRAY_700 ?? colors.GRAY,
     textDecorationLine: "underline",
+  },
+  footerLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+  },
+  footerLinkText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.GRAY_700 ?? colors.GRAY,
+  },
+  footerDivider: {
+    fontSize: 12,
+    color: colors.INACTIVE,
   },
 });

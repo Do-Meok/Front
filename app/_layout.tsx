@@ -1,4 +1,5 @@
 import queryClient from "@/api/queryClient";
+import AuthKakaoRedirectHandler from "@/components/AuthKakaoRedirectHandler";
 import { NavigationProvider } from "@/providers/NavigationProvider";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
@@ -9,6 +10,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <NavigationProvider>
+        <AuthKakaoRedirectHandler />
         <Stack screenOptions={{ headerShown: false }} initialRouteName="(tabs)">
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(onboarding)" />

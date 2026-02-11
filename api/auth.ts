@@ -48,18 +48,22 @@ async function kakaoLogin(): Promise<void> {
 // 카카오 로그인 콜백
 async function kakaoLoginCallback(): Promise<void> {
   const { data } = await axiosInstance.get(`${PREFIX}/users/kakao/redirect`);
-  
+
   return data;
 }
 
-/** 로그아웃: 저장된 토큰 삭제 + axios 헤더 제거 */
+/** 로그아웃: 서버에 refresh_token 전달 후 저장된 토큰 삭제 + axios 헤더 제거 */
 async function logout(): Promise<void> {
-  const { data } = await axiosInstance.post(`${PREFIX}/users/log-out`);
-  
-  if (data.success) {
-    await clearStoredTokens();
-    delete axiosInstance.defaults.headers.common["Authorization"];
+  const refreshToken = await getSecureStore("refreshToken");
+  try {
+    await axiosInstance.post(`${PREFIX}/users/log-out`, {
+      refresh_token: refreshToken ?? undefined,
+    });
+  } catch {
+    // 422 등 API 실패해도 클라이언트에서는 항상 로그아웃 처리
   }
+  await clearStoredTokens();
+  delete axiosInstance.defaults.headers.common["Authorization"];
 }
 
 /** 토큰 재발급 */
