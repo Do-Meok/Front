@@ -61,7 +61,7 @@ temp/
 coverage/
 
 # IDE (optional - .vscode is often committed for team settings)
-# .idea/
+.idea/
 
 docs/
 scripts/

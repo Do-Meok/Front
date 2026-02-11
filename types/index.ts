@@ -20,6 +20,37 @@ export type LoginForm = {
   password: string;
 };
 
+export type TokenRefreshResponse = {
+  access_token: string;
+  refresh_token: string;
+};
+
+export type FindEmailForm = {
+  name: string;
+  birth: string;
+  phone_num: string;
+};
+
+export type FindPasswordForm = {
+  current_password: string;
+  new_password: string;
+  checked_new_password: string;
+};
+
+export type ResetPasswordForm = {
+  email: string;
+  name: string;
+  birth: string;
+  phone_num: string;
+  new_password: string;
+  checked_new_password: string;
+};
+
+// 닉네임 변경
+export type ChangeNicknameForm = {
+  nickname: string;
+};
+
 // User 관련 타입
 export type InfoResponse = {
   id: number;
