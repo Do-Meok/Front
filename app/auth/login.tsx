@@ -6,15 +6,15 @@ import useAuth from "@/hooks/useAuth";
 import { LoginForm } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    View
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -29,6 +29,11 @@ export default function LoginFormScreen() {
   const onPressLogin = (formValues: LoginForm) => {
     loginMutation.mutate(formValues);
   };
+
+  useEffect(() => {
+    if (!loginMutation.isSuccess) return;
+    router.replace("/auth/loading");
+  }, [loginMutation.isSuccess]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -68,16 +73,19 @@ export default function LoginFormScreen() {
               <Text style={styles.primaryBtnText}>로그인</Text>
             </Pressable>
 
-            {/* 회원가입 / 이메일·비밀번호 찾기 */}
-            <View style={styles.row}>
-              <Pressable onPress={() => router.push("/auth/signup")}>
-                <Text style={styles.link}>회원가입</Text>
+            {/* 회원가입 / 계정찾기 */}
+            <View style={styles.actionRow}>
+              <Pressable
+                style={styles.actionBtn}
+                onPress={() => router.push("/auth/signup")}
+              >
+                <Text style={styles.actionBtnText}>회원가입</Text>
               </Pressable>
-              <Pressable onPress={() => router.push("/auth/find-email")}>
-                <Text style={styles.link}>이메일 찾기</Text>
-              </Pressable>
-              <Pressable onPress={() => router.push("/auth/find-password")}>
-                <Text style={styles.link}>비밀번호 찾기</Text>
+              <Pressable
+                style={styles.actionBtn}
+                onPress={() => router.push("/auth/account-recovery")}
+              >
+                <Text style={styles.actionBtnText}>계정찾기</Text>
               </Pressable>
             </View>
           </View>
@@ -129,10 +137,24 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "900" },
-  row: {
+  actionRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
+    gap: 12,
+    marginTop: 16,
   },
-  link: { fontSize: 14, fontWeight: "800", color: "#111" },
+  actionBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+    backgroundColor: colors.WHITE,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.BLACK,
+  },
 });

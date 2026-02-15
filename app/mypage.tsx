@@ -1,5 +1,4 @@
 import { colors } from "@/constants";
-import useLogout from "@/hooks/auth/useLogout";
 import useRefreshToken from "@/hooks/auth/useRefreshToken";
 import useAuth from "@/hooks/useAuth";
 import { useNavigationContext } from "@/providers/NavigationProvider";
@@ -37,15 +36,14 @@ export default function MyPageScreen() {
   const { userInfoQuery } = useAuth();
   const { data: userInfo, isLoading, error, refetch, isRefetching } = userInfoQuery;
   const { isOnboardingCompleted, setOnboardingCompleted } = useNavigationContext();
-  const logoutMutation = useLogout();
   const refreshTokenMutation = useRefreshToken();
 
   // 401 또는 서버 500(토큰 만료 메시지) → 로그인하러 가기
   const status = (error as any)?.response?.status;
   const msg = String(
     (error as any)?.response?.data?.message ??
-      (error as any)?.response?.data?.detail ??
-      ""
+    (error as any)?.response?.data?.detail ??
+    ""
   );
   const isUnauthorized =
     error &&
@@ -200,7 +198,7 @@ export default function MyPageScreen() {
               style={styles.menuItem}
               onPress={() => refreshTokenMutation.mutate(undefined, {
                 onSuccess: () => refetch(),
-                onError: () => {},
+                onError: () => { },
               })}
               disabled={refreshTokenMutation.isPending}
             >
@@ -233,15 +231,10 @@ export default function MyPageScreen() {
 
           {/* 로그아웃 */}
           <Pressable
-            style={[styles.logoutBtn, logoutMutation.isPending && styles.logoutBtnDisabled]}
-            onPress={() => logoutMutation.mutate(undefined, {
-              onSuccess: () => router.replace("/auth"),
-            })}
-            disabled={logoutMutation.isPending}
+            style={styles.logoutBtn}
+            onPress={() => router.replace("/auth/logout-loading")}
           >
-            <Text style={styles.logoutBtnText}>
-              {logoutMutation.isPending ? "로그아웃 중…" : "로그아웃"}
-            </Text>
+            <Text style={styles.logoutBtnText}>로그아웃</Text>
           </Pressable>
         </View>
       </View>
@@ -406,7 +399,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.BORDER,
   },
-  logoutBtnDisabled: { opacity: 0.6 },
   logoutBtnText: {
     fontSize: 15,
     fontWeight: "700",

@@ -3,11 +3,11 @@ import { getSecureStore } from "@/utils/secureStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useSegments } from "expo-router";
 import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 
 interface NavigationContextType {
@@ -16,6 +16,7 @@ interface NavigationContextType {
   isReady: boolean;
   checkAuthState: () => Promise<void>;
   setOnboardingCompleted: (completed: boolean) => void;
+  setHasToken: (value: boolean) => void;
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(
@@ -36,7 +37,10 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<
     boolean | null
   >(null);
-  const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const [hasToken, setHasTokenState] = useState<boolean | null>(null);
+  const setHasToken = useCallback((value: boolean) => {
+    setHasTokenState(value);
+  }, []);
   const [isReady, setIsReady] = useState(false);
   const router = useRouter();
   const segments = useSegments();
@@ -47,12 +51,12 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
       const completed = await AsyncStorage.getItem("onboarding_completed");
       const token = await getSecureStore("accessToken");
       setIsOnboardingCompleted(completed === "true");
-      setHasToken(!!token);
+      setHasTokenState(!!token);
       setIsReady(true);
     } catch (error) {
       console.error("인증 상태 확인 실패:", error);
       setIsOnboardingCompleted(false);
-      setHasToken(false);
+      setHasTokenState(false);
       setIsReady(true);
     }
   }, []);
@@ -61,13 +65,6 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     // 앱 시작 시 인증 상태 확인
     checkAuthState();
   }, [checkAuthState]);
-
-  // segments가 변경될 때마다 인증 상태 재확인
-  useEffect(() => {
-    if (segments[0] === "auth" || segments[0] === "(tabs)") {
-      checkAuthState();
-    }
-  }, [segments, checkAuthState]);
 
   // 초기 라우팅 및 네비게이션 가드
   useEffect(() => {
@@ -92,10 +89,8 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     // 2. 온보딩은 완료되었지만 로그인되지 않은 경우
     if (!hasToken) {
       if (inOnboarding) {
-        // 온보딩 화면에 있으면 auth로 이동
         router.replace("/auth");
       } else if (inTabs) {
-        // "로그인 없이 시작" 직후 동기 플래그 확인 → 있으면 리다이렉트 안 함
         if (consumeGuestChosen()) return;
         AsyncStorage.getItem("is_guest").then((value) => {
           if (value !== "true") {
@@ -108,11 +103,18 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
 
     // 3. 온보딩 완료 + 로그인 완료
     if (hasToken) {
-      if (inOnboarding || inAuth) {
-        // 온보딩이나 auth 화면에 있으면 tabs(홈)로 이동
+      const inAuthLoading = segments[1] === "loading";
+      if ((inOnboarding || inAuth) && !inAuthLoading) {
+        // 온보딩/auth(로딩 제외)에 있으면 tabs(홈)로 이동
         router.replace("/(tabs)");
       }
       // 초기 라우트면 홈에 그대로 있음 (리다이렉트 없음)
+      return;
+    }
+
+    // 4. 로그아웃 로딩 중에는 리다이렉트하지 않음
+    const inLogoutLoading = inAuth && segments[1] === "logout-loading";
+    if (inLogoutLoading) {
       return;
     }
   }, [isReady, isOnboardingCompleted, hasToken, segments, router]);
@@ -131,6 +133,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
         isReady,
         checkAuthState,
         setOnboardingCompleted,
+        setHasToken,
       }}
     >
       {children}

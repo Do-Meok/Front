@@ -1,12 +1,14 @@
 import { login } from "@/api/auth";
 import axiosInstance from "@/api/axios";
+import { useNavigationContext } from "@/providers/NavigationProvider";
 import { saveSecureStore } from "@/utils/secureStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation } from "@tanstack/react-query";
-import { router } from "expo-router";
 import { Alert } from "react-native";
 
 function useLogin() {
+  const { setHasToken } = useNavigationContext();
+
   return useMutation({
     mutationFn: login,
     onSuccess: async (data) => {
@@ -25,7 +27,7 @@ function useLogin() {
         }
         await AsyncStorage.removeItem("is_guest");
         axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        setTimeout(() => router.replace("/(tabs)"), 100);
+        setHasToken(true);
       } else {
         console.warn("로그인 응답에 토큰이 없습니다:", data);
         Alert.alert("오류", "로그인 응답에 토큰이 없습니다.");

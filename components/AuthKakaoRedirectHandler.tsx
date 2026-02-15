@@ -1,5 +1,7 @@
 import axiosInstance from "@/api/axios";
+import { useNavigationContext } from "@/providers/NavigationProvider";
 import { saveSecureStore } from "@/utils/secureStore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { useEffect } from "react";
@@ -9,6 +11,8 @@ import { useEffect } from "react";
  * domeok://auth/kakao?access_token=...&refresh_token=... 형식의 딥링크를 처리합니다.
  */
 export default function AuthKakaoRedirectHandler() {
+  const { setHasToken } = useNavigationContext();
+
   useEffect(() => {
     const handleUrl = async (event: { url: string }) => {
       const url = event.url;
@@ -24,8 +28,10 @@ export default function AuthKakaoRedirectHandler() {
         if (refreshToken) {
           await saveSecureStore("refreshToken", refreshToken);
         }
+        await AsyncStorage.removeItem("is_guest");
         axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
-        router.replace("/(tabs)");
+        setHasToken(true);
+        router.replace("/auth/loading");
       }
     };
 
@@ -36,7 +42,7 @@ export default function AuthKakaoRedirectHandler() {
     });
 
     return () => subscription.remove();
-  }, []);
+  }, [setHasToken]);
 
   return null;
 }

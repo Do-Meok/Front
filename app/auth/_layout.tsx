@@ -26,6 +26,13 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="loading"
+        options={{
+          title: "로딩",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="signup"
         options={{
           title: "회원가입",
@@ -43,6 +50,10 @@ export default function AuthLayout() {
       <Stack.Screen
         name="change-password"
         options={{ title: "비밀번호 변경", headerShown: false }}
+      />
+      <Stack.Screen
+        name="account-recovery"
+        options={{ title: "계정찾기", headerShown: false }}
       />
       <Stack.Screen
         name="change-nickname"
