@@ -1,6 +1,7 @@
 import DateInputWithCalendar from "@/components/DateInputWithCalendar";
 import useCreateIngredient from "@/hooks/ingredients/useCreateIngredient";
 import useUpdateIngredient from "@/hooks/ingredients/useUpdateIngredient";
+import { fmtYYYYMMDD } from "@/utils/date";
 import { fromKoreanStorageType } from "@/utils/storageType";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
@@ -24,7 +25,7 @@ export default function AddIngredientModal({
   visible,
   onClose,
 }: AddIngredientModalProps) {
-  const [buyDate, setBuyDate] = useState("");
+  const [buyDate, setBuyDate] = useState(fmtYYYYMMDD(new Date()));
   const [name, setName] = useState("");
   const [addStorageType, setAddStorageType] = useState<string>("");
   const [addExpirationDate, setAddExpirationDate] = useState("");
@@ -102,7 +103,7 @@ export default function AddIngredientModal({
           value={buyDate}
           onChangeText={setBuyDate}
           placeholder="YYYY-MM-DD"
-          helperText="YYYY-MM-DD 형식 (선택사항)"
+          helperText="기본값은 오늘 날짜로 설정됩니다."
         />
 
         <Text style={[styles.inputLabel, { marginTop: 12 }]}>식재료명</Text>

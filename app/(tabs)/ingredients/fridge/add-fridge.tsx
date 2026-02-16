@@ -1,6 +1,6 @@
 import PageHeader from "@/components/PageHeader";
-import { useFridgeContext } from "@/providers/FridgeProvider";
 import { colors } from "@/constants";
+import { useFridgeContext } from "@/providers/FridgeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -15,7 +15,7 @@ import {
 const COLS_MIN = 1;
 const COLS_MAX = 4;
 const ROWS_MIN = 1;
-const ROWS_MAX = 3;
+const ROWS_MAX = 8;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -90,11 +90,11 @@ export default function AddFridgeScreen() {
             onChangeText={setRowsStr}
             keyboardType="number-pad"
             style={styles.inputSmall}
-            placeholder="1~3"
+            placeholder="1~8"
           />
           <Text style={styles.unit}>칸</Text>
         </View>
-        <Text style={styles.hint}>세로 최소 1이상 최대 3까지</Text>
+        <Text style={styles.hint}>세로 최소 1이상 최대 8까지</Text>
 
         <Pressable
           style={[styles.completeBtn, !name.trim() && styles.completeBtnDisabled]}

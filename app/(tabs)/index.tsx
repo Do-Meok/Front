@@ -29,7 +29,7 @@ export default function HomeScreen() {
   } = useGetRecommendationsRecipes();
 
   const { data: savedRecipes } = useGetRecipes();
-  const { data: ingredients = [] } = useGetIngredients();
+  const { data: ingredients = [], isLoading: isIngredientsLoading } = useGetIngredients();
   const createRecipeDetailsMutation = useCreateRecipeDetails();
   const saveRecipeMutation = useSaveRecipe();
 
@@ -97,6 +97,9 @@ export default function HomeScreen() {
   const isRecipeLoading =
     createRecipeDetailsMutation.isPending || saveRecipeMutation.isPending;
 
+  // 초기 데이터 로딩 상태 (추천 레시피 + 재료 목록)
+  const isInitialLoading = (isRecommendLoading && !recommendationsData) || isIngredientsLoading;
+
   return (
     <SafeAreaView style={styles.container}>
       <HomeHeader
@@ -137,6 +140,14 @@ export default function HomeScreen() {
         )}
       </View>
 
+      {/* 초기 데이터 로딩 화면 */}
+      <Modal visible={isInitialLoading} transparent animationType="fade">
+        <View style={styles.loadingModal}>
+          <RecipeLoadingScreen message="데이터를 불러오는 중입니다..." />
+        </View>
+      </Modal>
+
+      {/* 레시피 상세 정보 로딩 화면 */}
       <Modal visible={isRecipeLoading} transparent animationType="fade">
         <View style={styles.loadingModal}>
           <RecipeLoadingScreen message="레시피를 받아오는 중입니다." />

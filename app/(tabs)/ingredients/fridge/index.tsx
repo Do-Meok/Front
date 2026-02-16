@@ -154,7 +154,7 @@ export default function FridgeScreen() {
             </Text>
           ) : (
             <View style={styles.ingredientList}>
-              {selectedCellIngredients.map((name, i) => (
+              {selectedCellIngredients.map((name: string, i: number) => (
                 <Text key={i} style={styles.ingredientItem}>
                   • {name}
                 </Text>
