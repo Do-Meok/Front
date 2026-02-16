@@ -1,5 +1,6 @@
 import AddIngredientModal from "@/components/AddIngredientModal";
 import EditIngredientModal from "@/components/EditIngredientModal";
+import IngredientIcon from "@/components/IngredientIcon";
 import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
 import useDeleteIngredient from "@/hooks/ingredients/useDeleteIngredient";
@@ -22,16 +23,6 @@ import {
 } from "react-native";
 
 type Filter = "전체" | "미분류" | StorageType | "냉장" | "냉동" | "실온";
-
-function iconByName(name: string) {
-  if (!name) return "nutrition-outline";
-  if (name.includes("소고기") || name.includes("고기"))
-    return "restaurant-outline";
-  if (name.includes("우유")) return "cafe-outline";
-  if (name.includes("양파")) return "leaf-outline";
-  if (name.includes("계란")) return "egg-outline" as any;
-  return "nutrition-outline";
-}
 
 export default function IngredientsScreen() {
   const [filter, setFilter] = useState<Filter>("전체");
@@ -63,7 +54,7 @@ export default function IngredientsScreen() {
   const sortedItems = useMemo(() => {
     // 필터에 따라 데이터 필터링
     let filtered = [...items];
-    
+
     if (filter === "미분류") {
       // storage_type이 null인 경우
       filtered = filtered.filter((item) => !item.storage_type);
@@ -74,7 +65,7 @@ export default function IngredientsScreen() {
         filtered = filtered.filter((item) => item.storage_type === storageType);
       }
     }
-    
+
     // 유통기한 순으로 정렬
     return filtered.sort((a, b) => {
       if (!a.expiration_date && !b.expiration_date) return 0;
@@ -165,8 +156,8 @@ export default function IngredientsScreen() {
               <View style={styles.card}>
                 <View style={styles.cardLeft}>
                   <View style={styles.iconBox}>
-                    <Ionicons
-                      name={iconByName(item.ingredient_name) as any}
+                    <IngredientIcon
+                      name={item.ingredient_name}
                       size={20}
                       color="#111"
                     />

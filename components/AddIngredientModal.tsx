@@ -49,12 +49,12 @@ export default function AddIngredientModal({
       if (data && data.length > 0 && (addStorageType || addExpirationDate)) {
         const ingredientId = data[0].id;
         const updateData: any = {};
-        
+
         if (addStorageType) {
           const storageType = fromKoreanStorageType(addStorageType);
           if (storageType) updateData.storage_type = storageType;
         }
-        
+
         if (addExpirationDate) {
           updateData.expiration_date = addExpirationDate;
         }
@@ -117,10 +117,10 @@ export default function AddIngredientModal({
 
         <View style={{ marginTop: 12 }}>
           <DateInputWithCalendar
-            label="유통기한 (YYYY-MM-DD)"
+            label="유통기한 (선택사항)"
             value={addExpirationDate}
             onChangeText={setAddExpirationDate}
-            placeholder="YYYY-MM-DD (선택사항)"
+            placeholder="YYYY-MM-DD"
             helperText="유통기한을 입력하세요. (선택사항)"
           />
         </View>

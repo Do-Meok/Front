@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import type { TabBarItem } from "./types";
 
 export function getFridgeTabBarItems(pathname: string): TabBarItem[] {
-  const inFridge = pathname === "/fridge" || pathname.startsWith("/fridge/");
+  const inFridge = pathname === "/(tabs)/ingredients/fridge" || pathname.startsWith("/(tabs)/ingredients/fridge/");
 
   return [
     {
@@ -24,8 +24,8 @@ export function getFridgeTabBarItems(pathname: string): TabBarItem[] {
       label: "냉장고",
       focused:
         inFridge &&
-        !pathname.startsWith("/fridge/search") &&
-        !pathname.startsWith("/fridge/add"),
+        !pathname.startsWith("/(tabs)/ingredients/fridge/search") &&
+        !pathname.startsWith("/(tabs)/ingredients/fridge/add"),
       icon: (focused: boolean, color: string) => (
         <Ionicons
           name={focused ? "snow" : "snow-outline"}
@@ -33,12 +33,12 @@ export function getFridgeTabBarItems(pathname: string): TabBarItem[] {
           color={color}
         />
       ),
-      go: () => router.replace("/fridge"),
+      go: () => router.replace("/(tabs)/ingredients/fridge"),
     },
     {
       key: "search",
       label: "냉장고 재료 검색",
-      focused: pathname.startsWith("/fridge/search"),
+      focused: pathname.startsWith("/(tabs)/ingredients/fridge/search"),
       icon: (focused: boolean, color: string) => (
         <Ionicons
           name={focused ? "search" : "search-outline"}
@@ -46,14 +46,14 @@ export function getFridgeTabBarItems(pathname: string): TabBarItem[] {
           color={color}
         />
       ),
-      go: () => router.replace("/fridge/search"),
+      go: () => router.replace("/(tabs)/ingredients/fridge/search"),
     },
     {
       key: "add",
       label: "냉장고 식재료 넣기",
       focused:
-        pathname.startsWith("/fridge/add") &&
-        !pathname.startsWith("/fridge/add-fridge"),
+        pathname.startsWith("/(tabs)/ingredients/fridge/add") &&
+        !pathname.startsWith("/(tabs)/ingredients/fridge/add-fridge"),
       icon: (focused: boolean, color: string) => (
         <Ionicons
           name={focused ? "add-circle" : "add-circle-outline"}
@@ -61,7 +61,7 @@ export function getFridgeTabBarItems(pathname: string): TabBarItem[] {
           color={color}
         />
       ),
-      go: () => router.replace("/fridge/add"),
+      go: () => router.replace("/(tabs)/ingredients/fridge/add"),
     },
   ];
 }

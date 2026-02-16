@@ -6,9 +6,10 @@ import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import { colors } from "@/constants";
 import useCreateRecipeDetails from "@/hooks/assistant/useCreateRecipeDetails";
 import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
+import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
-import type { RecipeRecommendationItem } from "@/types";
+import type { GetIngredientResponse, RecipeRecommendationItem } from "@/types";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
 import {
@@ -20,13 +21,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const expiring = [
-  { id: "1", name: "우유", expiresAt: "2026-01-31" },
-  { id: "2", name: "양파", expiresAt: "2026-01-02" },
-  { id: "3", name: "두부", expiresAt: "2026-01-30" },
-  { id: "4", name: "달걀", expiresAt: "2026-02-01" },
-];
-
 export default function HomeScreen() {
   const {
     data: recommendationsData,
@@ -35,8 +29,28 @@ export default function HomeScreen() {
   } = useGetRecommendationsRecipes();
 
   const { data: savedRecipes } = useGetRecipes();
+  const { data: ingredients = [] } = useGetIngredients();
   const createRecipeDetailsMutation = useCreateRecipeDetails();
   const saveRecipeMutation = useSaveRecipe();
+
+  // 유통기한 급박한 순으로 정렬하여 상위 5개만 선택
+  const expiringItems = useMemo(() => {
+    return ingredients
+      .filter((item: GetIngredientResponse) => item.expiration_date) // 유통기한이 있는 것만
+      .sort((a: GetIngredientResponse, b: GetIngredientResponse) => {
+        // 유통기한 오름차순 정렬 (가장 급박한 것이 먼저)
+        return (
+          new Date(a.expiration_date!).getTime() -
+          new Date(b.expiration_date!).getTime()
+        );
+      })
+      .slice(0, 5) // 상위 5개만
+      .map((item: GetIngredientResponse) => ({
+        id: String(item.id),
+        name: item.ingredient_name,
+        expiresAt: item.expiration_date!,
+      }));
+  }, [ingredients]);
 
   const handlePressRecipeItem = (item: FeaturedRecipe) => {
     const match = item.id.match(/^recommend-(\d+)-/);
@@ -86,7 +100,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <HomeHeader
-        onPressBell={() => {}}
+        onPressBell={() => { }}
         onPressProfile={() => router.push("/mypage")}
       />
       <View style={styles.page}>
@@ -112,13 +126,15 @@ export default function HomeScreen() {
         ) : null}
 
         {/* 유통기한 마감 */}
-        <ExpiringCarousel
-          items={expiring}
-          onPressItem={(item) => {
-            // 예: 해당 재료로 레시피 추천 화면 이동
-            // router.push(`/recipes?ingredient=${encodeURIComponent(item.name)}`)
-          }}
-        />
+        {expiringItems.length > 0 && (
+          <ExpiringCarousel
+            items={expiringItems}
+            onPressItem={(item) => {
+              // 예: 해당 재료로 레시피 추천 화면 이동
+              // router.push(`/recipes?ingredient=${encodeURIComponent(item.name)}`)
+            }}
+          />
+        )}
       </View>
 
       <Modal visible={isRecipeLoading} transparent animationType="fade">
