@@ -1,9 +1,10 @@
-import type { Fridge } from "@/types/fridge";
+import type { Fridge } from "@/types";
 import React, { createContext, useCallback, useContext, useState } from "react";
 
 const defaultFridges: Fridge[] = [
   {
     id: "1",
+    apiId: 1,
     name: "메인 냉장고",
     cols: 3,
     rows: 3,

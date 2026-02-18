@@ -22,6 +22,8 @@ const queryKey = {
   SEARCH_RECIPES_BY_NAME: "search_recipes_by_name",
   RECIPES: "recipes",
   GET_RECIPES: "get_recipes",
+  REFRIGERATOR: "refrigerator",
+  COMPARTMENT_INGREDIENTS: "compartment_ingredients",
 };
 
 export { colors, queryKey };

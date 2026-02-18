@@ -61,6 +61,21 @@ export type InfoResponse = {
   phone_num: string | null;
 };
 
+// Refresh 관련 타입
+
+export type RefreshRequest = {
+  accessToken?: string;
+  access_token?: string;
+  token?: string;
+  refreshToken?: string;
+  refresh_token?: string;
+};
+
+export type RefreshResponse = {
+  access_token: string;
+  refresh_token: string;
+};
+
 // Ingredient 관련 타입
 export type StorageType = "FRIDGE" | "FREEZER" | "ROOM";
 
@@ -157,9 +172,51 @@ export type SaveRecipeResponse = RecipeDetailResponse & {
 /** 냉장고 한 대 (시각화용: 가로/세로 칸) */
 export type Fridge = {
   id: string;
+  apiId?: number; // 백엔드 냉장고 ID
   name: string;
   cols: number; // 1~4
-  rows: number; // 1~3
+  rows: number; // 1~8
   /** 칸별 식재료: "row-col" -> 식재료 이름 배열 */
   cellIngredients?: Record<string, string[]>;
+};
+
+// 냉장고 칸 (Compartment)
+export type Compartment = {
+  id: number;
+  name: string;
+  order_index: number;
+};
+
+// 냉장고 조회 응답
+export type RefrigeratorResponse = {
+  id: number;
+  name: string;
+  pos_x: number;
+  pos_y: number;
+  compartments: Compartment[];
+};
+
+// 냉장고 칸 재료
+export type CompartmentIngredient = {
+  id: number;
+  ingredient_name: string;
+  purchase_date: string;
+  expiration_date: string;
+  storage_type: StorageType;
+  is_auto_fillable: boolean;
+};
+
+// 냉장고 추가 요청
+export type RefrigeratorAddRequest = {
+  name: string;
+  pos_x: number;
+  pos_y: number;
+};
+
+// 냉장고 추가 응답
+export type RefrigeratorAddResponse = {
+  id: number;
+  name: string;
+  pos_x: number;
+  pos_y: number;
 };

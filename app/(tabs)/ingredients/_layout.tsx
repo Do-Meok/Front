@@ -1,5 +1,5 @@
-import { FridgeProvider } from "@/providers/FridgeProvider";
 import { colors } from "@/constants";
+import { FridgeProvider } from "@/providers/FridgeProvider";
 import { Stack } from "expo-router";
 
 export default function MyLayout() {
@@ -21,7 +21,7 @@ export default function MyLayout() {
           }}
         />
         <Stack.Screen
-          name="manage"
+          name="manage/index"
           options={{
             headerShown: false,
             title: "재료 관리",

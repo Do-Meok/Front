@@ -1,28 +1,21 @@
 /**
  * 토큰 갱신/삭제만 담당 (axios 인터셉터에서 사용, 순환 참조 방지)
  */
+import { RefreshRequest } from "@/types";
 import {
   deleteSecureStore,
   getSecureStore,
   saveSecureStore,
 } from "@/utils/secureStore";
 import axios from "axios";
-
-const API_URL = "https://domeok.augustzero.duckdns.org";
-const PREFIX = "/api/v1";
+import { API_URL, PREFIX } from "./config";
 
 export async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = await getSecureStore("refreshToken");
   if (!refreshToken) return null;
 
   try {
-    const { data } = await axios.post<{
-      accessToken?: string;
-      access_token?: string;
-      token?: string;
-      refreshToken?: string;
-      refresh_token?: string;
-    }>(`${API_URL}${PREFIX}/users/refresh`, {
+    const { data } = await axios.post<RefreshRequest>(`${API_URL}${PREFIX}/users/refresh`, {
       refresh_token: refreshToken,
       refreshToken,
     });

@@ -2,10 +2,9 @@ import { clearStoredTokens, refreshAccessToken } from "@/api/authRefresh";
 import { getSecureStore } from "@/utils/secureStore";
 import axios from "axios";
 import { router } from "expo-router";
+import { API_URL, PREFIX } from "./config";
 
-export const API_URL = "https://domeok.augustzero.duckdns.org";
-
-export const PREFIX = "/api/v1";
+export { API_URL, PREFIX };
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
