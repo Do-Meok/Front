@@ -12,6 +12,7 @@ import { type Href, router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -25,7 +26,7 @@ import {
 
 
 export default function FridgeScreen() {
-  const { fridges } = useFridgeContext();
+  const { fridges, localAssignments, addLocalAssignment } = useFridgeContext();
   const [selectedFridgeIdx, setSelectedFridgeIdx] = useState(0);
   const [fridgePickerOpen, setFridgePickerOpen] = useState(false);
   const [selectedCompartment, setSelectedCompartment] =
@@ -73,17 +74,18 @@ export default function FridgeScreen() {
     })),
   });
 
-  // compartmentId -> 재료 목록 맵
+  // compartmentId -> 재료 목록 맵 (API + 로컬 병합)
   const ingredientsByCompartment = useMemo(() => {
     const map = new Map<number, CompartmentIngredient[]>();
     sortedCompartments.forEach((comp, idx) => {
-      const q = compartmentQueries[idx];
-      if (q?.data) {
-        map.set(comp.id, q.data);
+      const apiData = compartmentQueries[idx]?.data ?? [];
+      const localData = localAssignments[comp.id] ?? [];
+      if (apiData.length > 0 || localData.length > 0) {
+        map.set(comp.id, [...apiData, ...localData]);
       }
     });
     return map;
-  }, [sortedCompartments, compartmentQueries]);
+  }, [sortedCompartments, compartmentQueries, localAssignments]);
 
   // 그리드 데이터: pos_x × pos_y 크기의 그리드에 compartment 매핑
   const gridData = useMemo(() => {
@@ -118,10 +120,13 @@ export default function FridgeScreen() {
   // 피커에서 검색 필터된 식재료 목록
   const filteredIngredients = useMemo(() => {
     if (!allIngredients) return [];
-    // 이미 해당 칸에 있는 재료 ID 목록
-    const existingIds = new Set(
-      (compartmentIngredients ?? []).map((ci) => ci.id)
-    );
+    // 이미 해당 칸에 있는 재료 ID 목록 (API + 로컬)
+    const existingIds = new Set([
+      ...(compartmentIngredients ?? []).map((ci) => ci.id),
+      ...(selectedCompartment
+        ? (localAssignments[selectedCompartment.id] ?? []).map((li) => li.id)
+        : []),
+    ]);
     const list = allIngredients.filter(
       (ing) => !existingIds.has(ing.id)
     );
@@ -131,7 +136,7 @@ export default function FridgeScreen() {
         .toLowerCase()
         .includes(pickerSearch.trim().toLowerCase())
     );
-  }, [allIngredients, compartmentIngredients, pickerSearch]);
+  }, [allIngredients, compartmentIngredients, localAssignments, selectedCompartment, pickerSearch]);
   const renderIngredientItem = ({
     item,
   }: {
@@ -411,28 +416,37 @@ export default function FridgeScreen() {
               <ActivityIndicator size="small" color="#111" />
               <Text style={styles.loadingText}>재료를 불러오는 중...</Text>
             </View>
-          ) : !compartmentIngredients ||
-            compartmentIngredients.length === 0 ? (
-            <View style={styles.sheetEmpty}>
-              <Ionicons
-                name="restaurant-outline"
-                size={40}
-                color="#ddd"
+          ) : (() => {
+            const apiItems = compartmentIngredients ?? [];
+            const localItems = selectedCompartment
+              ? localAssignments[selectedCompartment.id] ?? []
+              : [];
+            const merged = [...apiItems, ...localItems];
+            if (merged.length === 0) {
+              return (
+                <View style={styles.sheetEmpty}>
+                  <Ionicons
+                    name="restaurant-outline"
+                    size={40}
+                    color="#ddd"
+                  />
+                  <Text style={styles.sheetEmptyText}>
+                    이 칸에 등록된 식재료가 없습니다.
+                  </Text>
+                </View>
+              );
+            }
+            return (
+              <FlatList
+                data={merged}
+                keyExtractor={(item) => `sheet-${item.id}`}
+                renderItem={renderIngredientItem}
+                style={styles.ingredientList}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 8 }}
               />
-              <Text style={styles.sheetEmptyText}>
-                이 칸에 등록된 식재료가 없습니다.
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={compartmentIngredients}
-              keyExtractor={(item) => String(item.id)}
-              renderItem={renderIngredientItem}
-              style={styles.ingredientList}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 8 }}
-            />
-          )}
+            );
+          })()}
 
           {/* 식재료 추가 버튼 */}
           <Pressable
@@ -527,9 +541,29 @@ export default function FridgeScreen() {
                       pressed && styles.pickerItemPressed,
                     ]}
                     onPress={() => {
-                      // TODO: 냉장고 칸에 식재료 배치 API 연동 필요
-                      // 지금은 선택 시 피드백만 제공
-                      setAddModalVisible(false);
+                      if (!selectedCompartment) return;
+                      Alert.alert(
+                        "재료칸에 추가",
+                        `"${item.ingredient_name}"을(를) ${selectedCompartment.name}에 추가하시겠습니까?`,
+                        [
+                          { text: "취소", style: "cancel" },
+                          {
+                            text: "추가",
+                            onPress: () => {
+                              const newItem: CompartmentIngredient = {
+                                id: item.id,
+                                ingredient_name: item.ingredient_name,
+                                purchase_date: item.purchase_date,
+                                expiration_date: item.expiration_date ?? "",
+                                storage_type: item.storage_type ?? "FRIDGE",
+                                is_auto_fillable: false,
+                              };
+                              addLocalAssignment(selectedCompartment.id, newItem);
+                              setAddModalVisible(false);
+                            },
+                          },
+                        ]
+                      );
                     }}
                   >
                     <View style={styles.pickerItemLeft}>

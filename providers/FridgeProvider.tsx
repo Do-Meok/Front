@@ -1,4 +1,4 @@
-import type { Fridge } from "@/types";
+import type { CompartmentIngredient, Fridge } from "@/types";
 import React, { createContext, useCallback, useContext, useState } from "react";
 
 const defaultFridges: Fridge[] = [
@@ -16,12 +16,17 @@ type FridgeContextType = {
   fridges: Fridge[];
   addFridge: (fridge: Omit<Fridge, "id">) => void;
   setFridges: React.Dispatch<React.SetStateAction<Fridge[]>>;
+  localAssignments: Record<number, CompartmentIngredient[]>;
+  addLocalAssignment: (compartmentId: number, item: CompartmentIngredient) => void;
 };
 
 const FridgeContext = createContext<FridgeContextType | undefined>(undefined);
 
 export function FridgeProvider({ children }: { children: React.ReactNode }) {
   const [fridges, setFridges] = useState<Fridge[]>(defaultFridges);
+  const [localAssignments, setLocalAssignments] = useState<
+    Record<number, CompartmentIngredient[]>
+  >({});
 
   const addFridge = useCallback((fridge: Omit<Fridge, "id">) => {
     setFridges((prev) => [
@@ -34,8 +39,20 @@ export function FridgeProvider({ children }: { children: React.ReactNode }) {
     ]);
   }, []);
 
+  const addLocalAssignment = useCallback(
+    (compartmentId: number, item: CompartmentIngredient) => {
+      setLocalAssignments((prev) => ({
+        ...prev,
+        [compartmentId]: [...(prev[compartmentId] ?? []), item],
+      }));
+    },
+    []
+  );
+
   return (
-    <FridgeContext.Provider value={{ fridges, addFridge, setFridges }}>
+    <FridgeContext.Provider
+      value={{ fridges, addFridge, setFridges, localAssignments, addLocalAssignment }}
+    >
       {children}
     </FridgeContext.Provider>
   );
