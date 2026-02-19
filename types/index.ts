@@ -61,6 +61,12 @@ export type InfoResponse = {
   phone_num: string | null;
 };
 
+export type UpdateUserInfoForm = {
+  name?: string | null;
+  birth?: string | null;
+  phone_num?: string | null;
+};
+
 // Refresh 관련 타입
 
 export type RefreshRequest = {

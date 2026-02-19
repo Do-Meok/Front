@@ -7,6 +7,7 @@ import {
   ResetPasswordForm,
   SignUpForm,
   TokenRefreshResponse,
+  UpdateUserInfoForm,
 } from "@/types";
 import { getSecureStore } from "@/utils/secureStore";
 import { clearStoredTokens } from "./authRefresh";
@@ -18,6 +19,12 @@ async function getUserInfo(): Promise<InfoResponse> {
     `${PREFIX}/users/info`
   );
 
+  return data;
+}
+
+// 유저 정보 수정 (이름, 생년월일, 전화번호 등)
+async function updateUserInfo(body: UpdateUserInfoForm): Promise<void> {
+  const { data } = await axiosInstance.patch(`${PREFIX}/users/info`, body);
   return data;
 }
 
@@ -80,7 +87,7 @@ async function refreshToken(): Promise<TokenRefreshResponse> {
 /** 이메일 찾기 */
 async function findEmail(body: FindEmailForm): Promise<void> {
   const { data } = await axiosInstance.post(`${PREFIX}/users/find-email`, body);
-  
+
   return data;
 }
 
@@ -93,14 +100,14 @@ async function findInLoginPassword(body: FindPasswordForm): Promise<void> {
 /** 비밀번호 찾기 */
 async function findPassword(body: ResetPasswordForm): Promise<void> {
   const { data } = await axiosInstance.post(`${PREFIX}/users/reset-pw`, body);
-  
+
   return data;
 }
 
 /** 닉네임 변경 */
 async function changeNickname(body: ChangeNicknameForm): Promise<void> {
   const { data } = await axiosInstance.patch(`${PREFIX}/users/nickname`, body);
-  
+
   return data;
 }
 
@@ -112,6 +119,7 @@ export {
   login,
   logout,
   refreshToken,
-  signup
+  signup,
+  updateUserInfo
 };
 

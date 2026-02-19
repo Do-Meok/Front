@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 export default function FoodThingLogo({ size = 40 }: { size?: number }) {
   return (
     <View style={styles.wrap}>
-      <Text style={[styles.logo, { fontSize: size }]}>FoodThing</Text>
+      <Text style={[styles.logo, { fontSize: size }]}>두고먹고</Text>
     </View>
   );
 }

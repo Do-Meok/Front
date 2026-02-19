@@ -1,3 +1,4 @@
+import SettingItem from "@/components/SettingItem";
 import { colors } from "@/constants";
 import useRefreshToken from "@/hooks/auth/useRefreshToken";
 import useAuth from "@/hooks/useAuth";
@@ -13,7 +14,7 @@ import {
   StyleSheet,
   Switch,
   Text,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -38,6 +39,9 @@ export default function MyPageScreen() {
   const { data: userInfo, isLoading, error, refetch, isRefetching } = userInfoQuery;
   const { isOnboardingCompleted, setOnboardingCompleted } = useNavigationContext();
   const refreshTokenMutation = useRefreshToken();
+
+  const missingInfo = userInfo && (!userInfo.name || !userInfo.birth || !userInfo.phone_num);
+
 
   // 401 또는 서버 500(토큰 만료 메시지) → 로그인하러 가기
   const status = (error as any)?.response?.status;
@@ -138,6 +142,24 @@ export default function MyPageScreen() {
         </View>
 
         {/* 유저 정보 */}
+        {missingInfo && (
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <View>
+                <Text style={styles.infoLabel}>본인인증 정보가 없습니다</Text>
+                <Text style={[styles.infoValue, { marginTop: 4, fontSize: 13, fontWeight: "400" }]}>
+                  아이디/비밀번호 찾기를 위해 정보를 등록해주세요.
+                </Text>
+              </View>
+            </View>
+            <SettingItem
+              label="내 정보 등록하기"
+              onPress={() => router.push("/auth/fill-user-info")}
+              style={{ borderBottomWidth: 0, paddingHorizontal: 0 }}
+            />
+          </View>
+        )}
+
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>닉네임</Text>
@@ -173,20 +195,14 @@ export default function MyPageScreen() {
           {/* 설정 메뉴 (로그인 상태) */}
           <View style={styles.menuSection}>
             <Text style={styles.menuSectionTitle}>설정</Text>
-            <Pressable
-              style={styles.menuItem}
+            <SettingItem
+              label="비밀번호 변경"
               onPress={() => router.push("/auth/change-password")}
-            >
-              <Text style={styles.menuItemText}>비밀번호 변경</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
-            </Pressable>
-            <Pressable
-              style={styles.menuItem}
+            />
+            <SettingItem
+              label="닉네임 변경"
               onPress={() => router.push("/auth/change-nickname")}
-            >
-              <Text style={styles.menuItemText}>닉네임 변경</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
-            </Pressable>
+            />
           </View>
 
           {/* 임시: 온보딩 다시 보기 on/off */}
@@ -372,15 +388,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 4,
   },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.BORDER,
-  },
   menuItemText: {
     fontSize: 15,
     fontWeight: "600",
@@ -397,5 +404,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: colors.BLACK,
+  },
+  card: {
+    borderWidth: 1,
+    borderColor: "#eee",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    backgroundColor: "#fff",
   },
 });

@@ -1,4 +1,5 @@
 import CheckPasswordInput from "@/components/CheckPasswordInput";
+import DateInputWithCalendar from "@/components/DateInputWithCalendar";
 import EmailInput from "@/components/EmailInput";
 import FoodThingLogo from "@/components/FoodThingLogo";
 import InputField from "@/components/InputField";
@@ -7,6 +8,7 @@ import PasswordInput from "@/components/PasswordInput";
 import { colors } from "@/constants";
 import useAuth from "@/hooks/useAuth";
 import { SignUpForm } from "@/types";
+import { formatPhoneNumber } from "@/utils/format";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
@@ -136,11 +138,10 @@ export default function SignUpScreen() {
                     name="birth"
                     control={signupForm.control}
                     render={({ field }) => (
-                      <InputField
-                        placeholder="생년월일 (예: 1990-01-01)"
+                      <DateInputWithCalendar
                         value={field.value ?? ""}
                         onChangeText={field.onChange}
-                        keyboardType="numeric"
+                        placeholder="생년월일 (예: 1990-01-01)"
                       />
                     )}
                   />
@@ -151,8 +152,12 @@ export default function SignUpScreen() {
                       <InputField
                         placeholder="전화번호 (예: 010-1234-5678)"
                         value={field.value ?? ""}
-                        onChangeText={field.onChange}
+                        onChangeText={(text) => {
+                          const formatted = formatPhoneNumber(text);
+                          field.onChange(formatted);
+                        }}
                         keyboardType="phone-pad"
+                        maxLength={13}
                       />
                     )}
                   />

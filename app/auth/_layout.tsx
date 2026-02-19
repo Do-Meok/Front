@@ -59,6 +59,10 @@ export default function AuthLayout() {
         name="change-nickname"
         options={{ title: "닉네임 변경", headerShown: false }}
       />
+      <Stack.Screen
+        name="fill-user-info"
+        options={{ title: "본인인증 정보 등록", headerShown: false }}
+      />
     </Stack>
   );
 }
