@@ -9,6 +9,7 @@ import React from "react";
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -124,7 +125,13 @@ export default function MyPageScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {renderHeader()}
-      <View style={styles.content}>
+
+      {/* 스크롤 가능한 본문 */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* 프로필 아이콘 */}
         <View style={styles.profileIcon}>
           <Ionicons name="person" size={48} color={colors.BLACK} />
@@ -142,44 +149,30 @@ export default function MyPageScreen() {
             <Text style={styles.infoValue}>{userInfo?.email || "-"}</Text>
           </View>
 
-          {userInfo?.name && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>이름</Text>
-              <Text style={styles.infoValue}>{userInfo.name}</Text>
-            </View>
-          )}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>이름</Text>
+            <Text style={[styles.infoValue, !userInfo?.name && styles.infoValueEmpty]}>
+              {userInfo?.name || "-"}
+            </Text>
+          </View>
 
-          {userInfo?.birth && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>생년월일</Text>
-              <Text style={styles.infoValue}>{userInfo.birth}</Text>
-            </View>
-          )}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>생년월일</Text>
+            <Text style={[styles.infoValue, !userInfo?.birth && styles.infoValueEmpty]}>
+              {userInfo?.birth || "-"}
+            </Text>
+          </View>
 
-          {userInfo?.phone_num && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>전화번호</Text>
-              <Text style={styles.infoValue}>{userInfo.phone_num}</Text>
-            </View>
-          )}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>전화번호</Text>
+            <Text style={[styles.infoValue, !userInfo?.phone_num && styles.infoValueEmpty]}>
+              {userInfo?.phone_num || "-"}
+            </Text>
+          </View>
 
           {/* 설정 메뉴 (로그인 상태) */}
           <View style={styles.menuSection}>
             <Text style={styles.menuSectionTitle}>설정</Text>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => router.push("/auth/find-email")}
-            >
-              <Text style={styles.menuItemText}>이메일 찾기</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
-            </Pressable>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => router.push("/auth/find-password")}
-            >
-              <Text style={styles.menuItemText}>비밀번호 찾기</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
-            </Pressable>
             <Pressable
               style={styles.menuItem}
               onPress={() => router.push("/auth/change-password")}
@@ -192,19 +185,6 @@ export default function MyPageScreen() {
               onPress={() => router.push("/auth/change-nickname")}
             >
               <Text style={styles.menuItemText}>닉네임 변경</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
-            </Pressable>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => refreshTokenMutation.mutate(undefined, {
-                onSuccess: () => refetch(),
-                onError: () => { },
-              })}
-              disabled={refreshTokenMutation.isPending}
-            >
-              <Text style={styles.menuItemText}>
-                {refreshTokenMutation.isPending ? "세션 연장 중…" : "세션 연장"}
-              </Text>
               <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
             </Pressable>
           </View>
@@ -228,15 +208,17 @@ export default function MyPageScreen() {
               thumbColor="#fff"
             />
           </View>
-
-          {/* 로그아웃 */}
-          <Pressable
-            style={styles.logoutBtn}
-            onPress={() => router.replace("/auth/logout-loading")}
-          >
-            <Text style={styles.logoutBtnText}>로그아웃</Text>
-          </Pressable>
         </View>
+      </ScrollView>
+
+      {/* 하단 고정 로그아웃 버튼 */}
+      <View style={styles.bottomBar}>
+        <Pressable
+          style={styles.logoutBtn}
+          onPress={() => router.replace("/auth/logout-loading")}
+        >
+          <Text style={styles.logoutBtnText}>로그아웃</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -272,10 +254,21 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.BLACK,
   },
-  content: {
+  scroll: {
     flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 24,
+    paddingBottom: 16,
+  },
+  bottomBar: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.BORDER,
+    backgroundColor: colors.WHITE,
   },
   profileIcon: {
     width: 100,
@@ -307,6 +300,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: colors.BLACK,
+  },
+  infoValueEmpty: {
+    color: colors.INACTIVE,
+    fontWeight: "400",
   },
   loginPromptContainer: {
     flex: 1,
@@ -366,8 +363,6 @@ const styles = StyleSheet.create({
   },
   menuSection: {
     marginTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: colors.BORDER,
     paddingTop: 16,
   },
   menuSectionTitle: {
@@ -392,7 +387,6 @@ const styles = StyleSheet.create({
     color: colors.BLACK,
   },
   logoutBtn: {
-    marginTop: 24,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",

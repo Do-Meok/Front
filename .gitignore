@@ -66,3 +66,4 @@ coverage/
 docs/
 scripts/
 .cursor/
+.vscode/

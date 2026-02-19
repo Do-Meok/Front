@@ -104,8 +104,11 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     // 3. 온보딩 완료 + 로그인 완료
     if (hasToken) {
       const inAuthLoading = segments[1] === "loading";
-      if ((inOnboarding || inAuth) && !inAuthLoading) {
-        // 온보딩/auth(로딩 제외)에 있으면 tabs(홈)로 이동
+      // 로그인 상태에서도 접근 가능한 auth 화면 (마이페이지에서 진입)
+      const isAuthenticatedAuthScreen =
+        segments[1] === "change-password" || segments[1] === "change-nickname";
+      if ((inOnboarding || inAuth) && !inAuthLoading && !isAuthenticatedAuthScreen) {
+        // 온보딩/auth(로딩·설정 화면 제외)에 있으면 tabs(홈)로 이동
         router.replace("/(tabs)");
       }
       // 초기 라우트면 홈에 그대로 있음 (리다이렉트 없음)

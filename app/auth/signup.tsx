@@ -1,25 +1,33 @@
 import CheckPasswordInput from "@/components/CheckPasswordInput";
 import EmailInput from "@/components/EmailInput";
 import FoodThingLogo from "@/components/FoodThingLogo";
+import InputField from "@/components/InputField";
 import NicknameInput from "@/components/NicknameInput";
 import PasswordInput from "@/components/PasswordInput";
+import { colors } from "@/constants";
 import useAuth from "@/hooks/useAuth";
 import { SignUpForm } from "@/types";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import React, { useRef, useState } from "react";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignUpScreen() {
   const { signupMutation } = useAuth();
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const expandAnim = useRef(new Animated.Value(0)).current;
+
   const signupForm = useForm<SignUpForm>({
     defaultValues: {
       email: "",
@@ -31,10 +39,30 @@ export default function SignUpScreen() {
       phone_num: null,
     },
   });
+
+  const togglePrivacy = () => {
+    const next = !privacyAgreed;
+    setPrivacyAgreed(next);
+    Animated.timing(expandAnim, {
+      toValue: next ? 1 : 0,
+      duration: 280,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const sectionHeight = expandAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 280],
+  });
+
   const onSubmit = (formValues: SignUpForm) => {
+    if (!privacyAgreed) {
+      formValues.name = null;
+      formValues.birth = null;
+      formValues.phone_num = null;
+    }
     signupMutation.mutate(formValues, {
       onError: (error: any) => {
-        // 409 Conflict: 이미 가입된 이메일 → 이메일 필드에 에러 표시
         if (error?.response?.status === 409) {
           signupForm.setError("email", {
             type: "manual",
@@ -51,7 +79,11 @@ export default function SignUpScreen() {
         style={styles.kav}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <FoodThingLogo size={38} />
 
           <View style={styles.card}>
@@ -64,11 +96,88 @@ export default function SignUpScreen() {
               </View>
             </FormProvider>
 
+            {/* ── 개인정보 수집 동의 ── */}
+            <Pressable style={styles.checkRow} onPress={togglePrivacy}>
+              <View style={[styles.checkbox, privacyAgreed && styles.checkboxChecked]}>
+                {privacyAgreed && (
+                  <Ionicons name="checkmark" size={14} color="#fff" />
+                )}
+              </View>
+              <Text style={styles.checkLabel}>
+                아이디·비밀번호 찾기를 위한 개인정보 수집 동의
+              </Text>
+            </Pressable>
+
+            {/* ── 본인인증 탭 (동의 시 슬라이드 다운) ── */}
+            <Animated.View style={[styles.identitySection, { maxHeight: sectionHeight, overflow: "hidden" }]}>
+              <View style={styles.identityHeader}>
+                <Ionicons name="person-circle-outline" size={18} color={colors.BLACK} />
+                <Text style={styles.identityTitle}>본인인증</Text>
+              </View>
+              <Text style={styles.identityDesc}>
+                이름, 생년월일, 전화번호를 등록하면{"\n"}
+                나중에 아이디·비밀번호를 찾을 때 사용됩니다.
+              </Text>
+
+              <FormProvider {...signupForm}>
+                <View style={styles.identityForm}>
+                  <Controller
+                    name="name"
+                    control={signupForm.control}
+                    render={({ field }) => (
+                      <InputField
+                        placeholder="이름"
+                        value={field.value ?? ""}
+                        onChangeText={field.onChange}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="birth"
+                    control={signupForm.control}
+                    render={({ field }) => (
+                      <InputField
+                        placeholder="생년월일 (예: 1990-01-01)"
+                        value={field.value ?? ""}
+                        onChangeText={field.onChange}
+                        keyboardType="numeric"
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="phone_num"
+                    control={signupForm.control}
+                    render={({ field }) => (
+                      <InputField
+                        placeholder="전화번호 (예: 010-1234-5678)"
+                        value={field.value ?? ""}
+                        onChangeText={field.onChange}
+                        keyboardType="phone-pad"
+                      />
+                    )}
+                  />
+                </View>
+              </FormProvider>
+            </Animated.View>
+
+            {/* ── 미동의 안내 ── */}
+            {!privacyAgreed && (
+              <View style={styles.noticeRow}>
+                <Ionicons name="information-circle-outline" size={14} color={colors.INACTIVE} />
+                <Text style={styles.noticeText}>
+                  미동의 시 아이디·비밀번호 찾기가 어려울 수 있습니다.
+                </Text>
+              </View>
+            )}
+
             <Pressable
-              style={styles.primaryBtn}
+              style={[styles.primaryBtn, signupMutation.isPending && styles.disabled]}
               onPress={signupForm.handleSubmit(onSubmit)}
+              disabled={signupMutation.isPending}
             >
-              <Text style={styles.primaryBtnText}>가입하기</Text>
+              <Text style={styles.primaryBtnText}>
+                {signupMutation.isPending ? "처리 중…" : "가입하기"}
+              </Text>
             </Pressable>
 
             <Pressable onPress={() => router.replace("/auth")}>
@@ -77,7 +186,7 @@ export default function SignUpScreen() {
               </Text>
             </Pressable>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -91,15 +200,14 @@ const styles = StyleSheet.create({
   kav: {
     flex: 1,
   },
-
-  container: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
+    paddingVertical: 32,
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: 16,
   },
-
   card: {
     width: "100%",
     maxWidth: 420,
@@ -109,25 +217,83 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 10,
   },
-
-  back: { fontSize: 26, fontWeight: "800", color: "#111", width: 40 },
-  title: {
-    textAlign: "center",
-    fontSize: 20,
-    fontWeight: "900",
-    color: "#111",
-  },
-
   form: {
     gap: 12,
   },
-  input: {
-    height: 46,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    paddingHorizontal: 12,
+
+  /* 개인정보 체크박스 행 */
+  checkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 6,
+    marginTop: 4,
   },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: "#ccc",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+  checkboxChecked: {
+    backgroundColor: colors.BLACK,
+    borderColor: colors.BLACK,
+  },
+  checkLabel: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.BLACK,
+  },
+
+  /* 본인인증 섹션 */
+  identitySection: {
+    backgroundColor: "#f8f8f8",
+    borderRadius: 12,
+    padding: 14,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "#ececec",
+  },
+  identityHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  identityTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.BLACK,
+  },
+  identityDesc: {
+    fontSize: 12,
+    color: colors.INACTIVE,
+    fontWeight: "500",
+    lineHeight: 18,
+  },
+  identityForm: {
+    gap: 10,
+    marginTop: 4,
+  },
+
+  /* 미동의 안내 */
+  noticeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  noticeText: {
+    fontSize: 11,
+    color: colors.INACTIVE,
+    fontWeight: "500",
+    flex: 1,
+  },
+
   primaryBtn: {
     height: 46,
     borderRadius: 12,
@@ -136,6 +302,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 4,
   },
+  disabled: { opacity: 0.6 },
   primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "900" },
   smallMuted: {
     textAlign: "center",
