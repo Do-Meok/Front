@@ -63,7 +63,7 @@ export default function MyPageScreen() {
           <ActivityIndicator size="large" color={colors.BLACK} />
           <Pressable
             style={[styles.loginBtnSecondary, { marginTop: 24 }]}
-            onPress={() => router.replace("/auth")}
+            onPress={() => router.replace("/auth/logout-loading")}
           >
             <Text style={styles.loginBtnSecondaryText}>로그인하러 가기</Text>
           </Pressable>
@@ -84,7 +84,7 @@ export default function MyPageScreen() {
           </Text>
           <Pressable
             style={styles.loginBtn}
-            onPress={() => router.replace("/auth")}
+            onPress={() => router.replace("/auth/logout-loading")}
           >
             <Text style={styles.loginBtnText}>로그인하러 가기</Text>
           </Pressable>
@@ -115,7 +115,7 @@ export default function MyPageScreen() {
             </Pressable>
             <Pressable
               style={styles.loginBtnSecondary}
-              onPress={() => router.replace("/auth")}
+              onPress={() => router.replace("/auth/logout-loading")}
             >
               <Text style={styles.loginBtnSecondaryText}>로그인하러 가기</Text>
             </Pressable>

@@ -1,3 +1,4 @@
+import { refreshAccessToken } from "@/api/authRefresh";
 import { consumeGuestChosen } from "@/utils/guestMode";
 import { getSecureStore } from "@/utils/secureStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -49,7 +50,16 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   const checkAuthState = useCallback(async () => {
     try {
       const completed = await AsyncStorage.getItem("onboarding_completed");
-      const token = await getSecureStore("accessToken");
+      let token = await getSecureStore("accessToken");
+
+      // 토큰이 없으면 리프레시 토큰으로 재발급 시도
+      if (!token) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          token = newToken;
+        }
+      }
+
       setIsOnboardingCompleted(completed === "true");
       setHasTokenState(!!token);
       setIsReady(true);

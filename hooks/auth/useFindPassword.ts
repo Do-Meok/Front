@@ -1,4 +1,4 @@
-import { findPassword } from "@/api/auth";
+import { findPassword } from "@/api/user";
 import { useMutation } from "@tanstack/react-query";
 import { Alert } from "react-native";
 

@@ -1,4 +1,4 @@
-import { signup } from "@/api/auth";
+import { signup } from "@/api/user";
 import { useMutation } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Alert } from "react-native";

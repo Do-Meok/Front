@@ -1,4 +1,4 @@
-import { findEmail } from "@/api/auth";
+import { findEmail } from "@/api/user";
 import { useMutation } from "@tanstack/react-query";
 import { Alert } from "react-native";
 

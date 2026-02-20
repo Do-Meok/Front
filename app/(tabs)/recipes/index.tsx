@@ -1,5 +1,5 @@
-import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import QueryErrorView from "@/components/QueryErrorView";
+import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import useSearchRecipesByName from "@/hooks/assistant/useSearchRecipesByName";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
 import type { RecipeDetailResponse } from "@/types";
@@ -15,6 +15,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function RecipeDetailContent({ detail }: { detail: RecipeDetailResponse }) {
   return (
@@ -67,6 +68,7 @@ function RecipeDetailContent({ detail }: { detail: RecipeDetailResponse }) {
 }
 
 export default function RecipesIndexScreen() {
+  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -87,7 +89,7 @@ export default function RecipesIndexScreen() {
   const showGuide = !hasSearched && !query.trim();
 
   return (
-    <View style={styles.page}>
+    <View style={[styles.page, { paddingTop: insets.top + 14 }]}>
       <View style={styles.searchSection}>
         <View style={styles.search}>
           <Ionicons name="search-outline" size={18} color="#666" />
@@ -183,7 +185,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     paddingHorizontal: 16,
-    paddingTop: 14,
+
   },
   searchSection: {
     flexDirection: "row",
