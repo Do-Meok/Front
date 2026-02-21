@@ -20,8 +20,10 @@ const CARD_W = Math.min(260, SCREEN_W * 0.62);
 const GAP = 12;
 const SNAP = CARD_W + GAP;
 
+const CALM_THRESHOLD = 30; // 30일 초과 → 중립 표시
+
 export default function ExpiringCarousel({
-  title = "빨리 드셔야 해요! 🚨",
+  title,
   items,
   onPressItem,
 }: {
@@ -35,13 +37,18 @@ export default function ExpiringCarousel({
   const computed = useMemo(() => {
     return items.map((it) => ({
       ...it,
-      dday: daysLeft(it.expiresAt) ?? 0, // null이면 0으로 처리
+      dday: daysLeft(it.expiresAt) ?? 0,
     }));
   }, [items]);
 
+  const minDday = computed.length > 0 ? Math.min(...computed.map((it) => it.dday)) : 0;
+  const isUrgent = minDday <= CALM_THRESHOLD;
+  const displayTitle =
+    title ?? (isUrgent ? "빨리 드셔야 해요! 🚨" : "보유하고 계신 식재료 유통기한");
+
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title}>{displayTitle}</Text>
 
       <Animated.FlatList
         data={computed}
@@ -65,14 +72,18 @@ export default function ExpiringCarousel({
         renderItem={({ item }) => {
           const badge = item.dday <= 0 ? "D-DAY" : `D-${item.dday}`;
           const danger = item.dday <= 2;
+          const calm = item.dday > CALM_THRESHOLD;
+
+          const cardStyle = danger
+            ? styles.cardDanger
+            : calm
+              ? styles.cardCalm
+              : styles.cardSafe;
 
           return (
             <Pressable
               onPress={() => onPressItem?.(item)}
-              style={[
-                styles.cardShell,
-                danger ? styles.cardDanger : styles.cardSafe,
-              ]}
+              style={[styles.cardShell, cardStyle]}
             >
               <View style={styles.card}>
                 <Text style={styles.badge}>{badge}</Text>
@@ -115,38 +126,26 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 16,
     overflow: "hidden",
-
-    // iOS shadow
     shadowColor: "#000",
     shadowOpacity: 0.12,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
-
-    // Android shadow
     elevation: 4,
   },
-  cardDanger: {
-    backgroundColor: "#ff6b6b",
-  },
-  cardSafe: {
-    backgroundColor: "#ffd166",
-  },
-
-  // ✅ 안쪽 컨텐츠 레이아웃
+  cardDanger: { backgroundColor: "#ff6b6b" },
+  cardSafe: { backgroundColor: "#ffd166" },
+  cardCalm: { backgroundColor: "#74c69d" }, // 30일 초과 → 초록 계열
   card: {
     flex: 1,
     padding: 16,
     justifyContent: "space-between",
   },
-
-  // ✅ 배지: pill 형태 + 배경 살짝
   badge: {
     alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.55)",
-
     fontWeight: "900",
     fontSize: 14,
     color: "#111",
@@ -167,16 +166,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 10,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  dotActive: {
-    backgroundColor: "#111",
-  },
-  dotIdle: {
-    backgroundColor: "#111",
-    opacity: 0.25,
-  },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  dotActive: { backgroundColor: "#111" },
+  dotIdle: { backgroundColor: "#111", opacity: 0.25 },
 });

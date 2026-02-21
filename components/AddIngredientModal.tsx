@@ -38,7 +38,7 @@ export default function AddIngredientModal({
       Alert.alert("알림", "식재료명을 입력해주세요.");
       return;
     }
-    const purchaseDate = buyDate.trim();
+    const purchaseDate = buyDate.trim() || fmtYYYYMMDD(new Date());
 
     try {
       const data = await addMutation.mutateAsync({
@@ -71,7 +71,7 @@ export default function AddIngredientModal({
       }
 
       setName("");
-      setBuyDate("");
+      setBuyDate(fmtYYYYMMDD(new Date()));
       setAddStorageType("");
       setAddExpirationDate("");
       onClose();

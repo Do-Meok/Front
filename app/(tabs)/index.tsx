@@ -1,3 +1,4 @@
+import EmptyIngredientsBanner from "@/components/EmptyIngredientsBanner";
 import ExpiringCarousel from "@/components/ExpiringCarousel";
 import type { FeaturedRecipe } from "@/components/FeaturedRecipeCarousel";
 import FeaturedRecipeCarousel from "@/components/FeaturedRecipeCarousel";
@@ -10,12 +11,14 @@ import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
 import type { GetIngredientResponse, RecipeRecommendationItem } from "@/types";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,7 +27,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { height: SCREEN_H } = Dimensions.get("window");
-// 기기 높이에 따라 히어로 이미지 높이 조정 (소형 기기 대응)
 const HERO_HEIGHT = Math.round(Math.min(280, SCREEN_H * 0.32));
 
 export default function HomeScreen() {
@@ -42,15 +44,11 @@ export default function HomeScreen() {
   // 유통기한 급박한 순으로 정렬하여 상위 5개만 선택
   const expiringItems = useMemo(() => {
     return ingredients
-      .filter((item: GetIngredientResponse) => item.expiration_date) // 유통기한이 있는 것만
-      .sort((a: GetIngredientResponse, b: GetIngredientResponse) => {
-        // 유통기한 오름차순 정렬 (가장 급박한 것이 먼저)
-        return (
-          new Date(a.expiration_date!).getTime() -
-          new Date(b.expiration_date!).getTime()
-        );
-      })
-      .slice(0, 5) // 상위 5개만
+      .filter((item: GetIngredientResponse) => item.expiration_date)
+      .sort((a: GetIngredientResponse, b: GetIngredientResponse) =>
+        new Date(a.expiration_date!).getTime() - new Date(b.expiration_date!).getTime()
+      )
+      .slice(0, 5)
       .map((item: GetIngredientResponse) => ({
         id: String(item.id),
         name: item.ingredient_name,
@@ -103,13 +101,16 @@ export default function HomeScreen() {
   const isRecipeLoading =
     createRecipeDetailsMutation.isPending || saveRecipeMutation.isPending;
 
-  // 초기 데이터 로딩 상태 (추천 레시피 + 재료 목록)
   const isInitialLoading = (isRecommendLoading && !recommendationsData) || isIngredientsLoading;
+
+  const hasIngredients = ingredients.length > 0;
+  const hasRecommendations = featuredItems.length > 0;
+  const isRecommendDone = !isRecommendLoading || !!recommendationsData;
 
   return (
     <SafeAreaView style={styles.container}>
       <HomeHeader
-        onPressBell={() => { }}
+        onPressBell={() => {}}
         onPressProfile={() => router.push("/mypage")}
       />
       <ScrollView
@@ -117,7 +118,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.pageContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 오늘의 추천 (보유 식재료 기반, 레시피 추천과 동일 API) */}
+        {/* 추천 레시피 영역 */}
         {isRecommendLoading && !recommendationsData ? (
           <View style={styles.recommendLoading}>
             <ActivityIndicator size="small" color={colors.BLACK} />
@@ -125,11 +126,9 @@ export default function HomeScreen() {
           </View>
         ) : recommendError && !recommendationsData ? (
           <View style={styles.recommendLoading}>
-            <Text style={styles.recommendLoadingText}>
-              추천을 불러올 수 없어요
-            </Text>
+            <Text style={styles.recommendLoadingText}>추천을 불러올 수 없어요</Text>
           </View>
-        ) : featuredItems.length > 0 ? (
+        ) : hasRecommendations ? (
           <FeaturedRecipeCarousel
             titleLabel="오늘의 추천"
             items={featuredItems}
@@ -138,14 +137,35 @@ export default function HomeScreen() {
           />
         ) : null}
 
+        {/* 재료도 없고 추천도 없을 때 → 재료 추가 유도 */}
+        {!isInitialLoading && !hasIngredients && !hasRecommendations && (
+          <EmptyIngredientsBanner />
+        )}
+
+        {/* 재료는 있는데 추천이 아직 없을 때 → AI 추천 유도 */}
+        {!isInitialLoading && isRecommendDone && hasIngredients && !hasRecommendations && (
+          <Pressable
+            style={styles.aiCtaCard}
+            onPress={() => router.push("/(tabs)/recipes/recommend" as any)}
+          >
+            <View style={styles.aiCtaIconBox}>
+              <Ionicons name="sparkles" size={28} color="#f59e0b" />
+            </View>
+            <View style={styles.aiCtaTextBox}>
+              <Text style={styles.aiCtaTitle}>AI를 통해 추천받아보시겠어요?</Text>
+              <Text style={styles.aiCtaDesc}>
+                보유 재료 기반으로 맞춤 레시피를 추천해드려요.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#bbb" />
+          </Pressable>
+        )}
+
         {/* 유통기한 마감 */}
         {expiringItems.length > 0 && (
           <ExpiringCarousel
             items={expiringItems}
-            onPressItem={(item) => {
-              // 예: 해당 재료로 레시피 추천 화면 이동
-              // router.push(`/recipes?ingredient=${encodeURIComponent(item.name)}`)
-            }}
+            onPressItem={() => {}}
           />
         )}
       </ScrollView>
@@ -172,23 +192,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.WHITE,
   },
-
-  writeButton: {
-    position: "absolute",
-    bottom: 16,
-    right: 16,
-    backgroundColor: "#ff5e08ff",
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 3,
-    shadowOpacity: 0.5,
-    elevation: 2,
-  },
   page: {
     flex: 1,
     marginTop: 10,
@@ -207,6 +210,42 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#777",
   },
+
+  /* AI 추천 유도 카드 */
+  aiCtaCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#f3e8c4",
+    backgroundColor: "#fffbeb",
+    gap: 12,
+  },
+  aiCtaIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#fef3c7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiCtaTextBox: {
+    flex: 1,
+    gap: 3,
+  },
+  aiCtaTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.BLACK,
+  },
+  aiCtaDesc: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: colors.INACTIVE,
+  },
+
   loadingModal: {
     flex: 1,
     backgroundColor: colors.WHITE,

@@ -1,3 +1,4 @@
+import EmptyIngredientsBanner from "@/components/EmptyIngredientsBanner";
 import FeaturedRecipeCarousel, {
     type FeaturedRecipe,
 } from "@/components/FeaturedRecipeCarousel";
@@ -8,6 +9,7 @@ import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import { colors } from "@/constants";
 import useCreateRecipeDetails from "@/hooks/assistant/useCreateRecipeDetails";
 import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
+import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
 import type { RecipeRecommendationItem } from "@/types";
@@ -75,6 +77,8 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
     refetch: refetchRecommendations,
     isRefetching: isRecommendRefetching,
   } = useGetRecommendationsRecipes();
+
+  const { data: ingredients = [], isLoading: isIngredientsLoading } = useGetIngredients();
 
   const createRecipeDetailsMutation = useCreateRecipeDetails();
   const saveRecipeMutation = useSaveRecipe();
@@ -204,6 +208,17 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
   );
 
   if (mode === "recommend") {
+    if (!isIngredientsLoading && ingredients.length === 0) {
+      return (
+        <View style={styles.page}>
+          <PageHeader title={title} />
+          <EmptyIngredientsBanner
+            title="재료를 추가해볼까요?"
+            description={"냉장고 재료를 등록하면\nAI 맞춤 레시피를 추천받을 수 있어요."}
+          />
+        </View>
+      );
+    }
     if (isRecommendLoading && !recommendationsData) {
       return (
         <View style={styles.page}>
@@ -235,7 +250,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
             <Ionicons name="restaurant-outline" size={28} color="#999" />
             <Text style={styles.emptyTitle}>추천할 메뉴가 없어요</Text>
             <Text style={styles.emptyDesc}>
-              식재료를 등록하면 맞춤 추천을 받을 수 있어요.
+              잠시 후 다시 시도해보세요.
             </Text>
           </View>
         ) : (

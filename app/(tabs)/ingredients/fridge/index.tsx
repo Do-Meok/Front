@@ -2,6 +2,7 @@ import { getCompartmentIngredients } from "@/api/refrigerator";
 import PageHeader from "@/components/PageHeader";
 import { queryKey } from "@/constants";
 import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
+import useAssignIngredientToCompartment from "@/hooks/refrigerator/useAssignIngredientToCompartment";
 import useGetCompartmentIngredients from "@/hooks/refrigerator/useGetCompartmentIngredients";
 import useGetRefrigerator from "@/hooks/refrigerator/useGetRefrigerator";
 import { useFridgeContext } from "@/providers/FridgeProvider";
@@ -23,10 +24,9 @@ import {
   View,
 } from "react-native";
 
-
-
 export default function FridgeScreen() {
-  const { fridges, localAssignments, addLocalAssignment } = useFridgeContext();
+  const { fridges, isLoaded, localAssignments, addLocalAssignment } = useFridgeContext();
+  const assignMutation = useAssignIngredientToCompartment();
   const [selectedFridgeIdx, setSelectedFridgeIdx] = useState(0);
   const [fridgePickerOpen, setFridgePickerOpen] = useState(false);
   const [selectedCompartment, setSelectedCompartment] =
@@ -53,6 +53,7 @@ export default function FridgeScreen() {
   const {
     data: compartmentIngredients,
     isLoading: isLoadingIngredients,
+    error: ingredientsError,
     refetch: refetchIngredients,
   } = useGetCompartmentIngredients(selectedCompartment?.id ?? null);
 
@@ -60,7 +61,7 @@ export default function FridgeScreen() {
   const sortedCompartments = useMemo(() => {
     if (!refrigerator?.compartments) return [];
     return [...refrigerator.compartments].sort(
-      (a, b) => a.order_index - b.order_index
+      (a, b) => a.order_index - b.order_index,
     );
   }, [refrigerator]);
 
@@ -74,18 +75,30 @@ export default function FridgeScreen() {
     })),
   });
 
-  // compartmentId -> 재료 목록 맵 (API + 로컬 병합)
+  // compartmentId -> 재료 목록 맵 (API + 로컬 병합, 그리드 카운트용)
   const ingredientsByCompartment = useMemo(() => {
     const map = new Map<number, CompartmentIngredient[]>();
     sortedCompartments.forEach((comp, idx) => {
       const apiData = compartmentQueries[idx]?.data ?? [];
       const localData = localAssignments[comp.id] ?? [];
-      if (apiData.length > 0 || localData.length > 0) {
-        map.set(comp.id, [...apiData, ...localData]);
+      const apiIds = new Set(apiData.map((i) => i.id));
+      const deduped = localData.filter((i) => !apiIds.has(i.id));
+      if (apiData.length > 0 || deduped.length > 0) {
+        map.set(comp.id, [...apiData, ...deduped]);
       }
     });
     return map;
   }, [sortedCompartments, compartmentQueries, localAssignments]);
+
+  // 바텀시트에 표시할 선택된 칸의 재료 목록 (API + 로컬, 중복 제거)
+  const mergedIngredients = useMemo(() => {
+    const apiItems = compartmentIngredients ?? [];
+    const localItems = selectedCompartment
+      ? (localAssignments[selectedCompartment.id] ?? [])
+      : [];
+    const apiIds = new Set(apiItems.map((i) => i.id));
+    return [...apiItems, ...localItems.filter((i) => !apiIds.has(i.id))];
+  }, [compartmentIngredients, localAssignments, selectedCompartment]);
 
   // 그리드 데이터: pos_x × pos_y 크기의 그리드에 compartment 매핑
   const gridData = useMemo(() => {
@@ -127,24 +140,24 @@ export default function FridgeScreen() {
         ? (localAssignments[selectedCompartment.id] ?? []).map((li) => li.id)
         : []),
     ]);
-    const list = allIngredients.filter(
-      (ing) => !existingIds.has(ing.id)
-    );
+    const list = allIngredients.filter((ing) => !existingIds.has(ing.id));
     if (!pickerSearch.trim()) return list;
     return list.filter((ing) =>
       ing.ingredient_name
         .toLowerCase()
-        .includes(pickerSearch.trim().toLowerCase())
+        .includes(pickerSearch.trim().toLowerCase()),
     );
-  }, [allIngredients, compartmentIngredients, localAssignments, selectedCompartment, pickerSearch]);
-  const renderIngredientItem = ({
-    item,
-  }: {
-    item: CompartmentIngredient;
-  }) => {
+  }, [
+    allIngredients,
+    compartmentIngredients,
+    localAssignments,
+    selectedCompartment,
+    pickerSearch,
+  ]);
+  const renderIngredientItem = ({ item }: { item: CompartmentIngredient }) => {
     const isExpiringSoon = item.expiration_date
       ? new Date(item.expiration_date).getTime() - Date.now() <
-      3 * 24 * 60 * 60 * 1000
+        3 * 24 * 60 * 60 * 1000
       : false;
     const isExpired = item.expiration_date
       ? new Date(item.expiration_date) < new Date()
@@ -156,9 +169,7 @@ export default function FridgeScreen() {
           <Text style={styles.ingredientName}>{item.ingredient_name}</Text>
           <View style={styles.ingredientMeta}>
             {item.purchase_date && (
-              <Text style={styles.metaText}>
-                구입: {item.purchase_date}
-              </Text>
+              <Text style={styles.metaText}>구입: {item.purchase_date}</Text>
             )}
             {item.expiration_date && (
               <Text
@@ -194,6 +205,42 @@ export default function FridgeScreen() {
       </View>
     );
   };
+
+  if (!isLoaded) {
+    return (
+      <View style={styles.page}>
+        <PageHeader title="냉장고 관리" />
+        <View style={styles.emptyFridgeState}>
+          <ActivityIndicator size="large" color="#111" />
+          <Text style={styles.emptyFridgeDesc}>냉장고 정보를 불러오는 중...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (fridges.length === 0) {
+    return (
+      <View style={styles.page}>
+        <PageHeader title="냉장고 관리" />
+        <View style={styles.emptyFridgeState}>
+          <Ionicons name="cube-outline" size={64} color="#ccc" />
+          <Text style={styles.emptyFridgeTitle}>등록된 냉장고가 없어요</Text>
+          <Text style={styles.emptyFridgeDesc}>
+            냉장고를 추가하면{"\n"}식재료를 칸별로 관리할 수 있어요.
+          </Text>
+          <Pressable
+            style={styles.addFridgeBtn}
+            onPress={() =>
+              router.push("/ingredients/fridge/add-fridge" as Href)
+            }
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#fff" />
+            <Text style={styles.addFridgeBtnText}>냉장고 추가하기</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.page}>
@@ -253,18 +300,14 @@ export default function FridgeScreen() {
       <View style={styles.actionRow}>
         <Pressable
           style={styles.actionBtn}
-          onPress={() =>
-            router.push("/ingredients/fridge/add-fridge" as Href)
-          }
+          onPress={() => router.push("/ingredients/fridge/add-fridge" as Href)}
         >
           <Ionicons name="add" size={18} color="#111" />
           <Text style={styles.actionBtnText}>냉장고 추가</Text>
         </Pressable>
         <Pressable
           style={styles.actionBtn}
-          onPress={() =>
-            router.push("/ingredients/fridge/search" as Href)
-          }
+          onPress={() => router.push("/ingredients/fridge/search" as Href)}
         >
           <Ionicons name="search" size={18} color="#111" />
           <Text style={styles.actionBtnText}>위치 찾기</Text>
@@ -284,9 +327,7 @@ export default function FridgeScreen() {
           <Text style={styles.errorText}>
             냉장고 정보를 불러올 수 없습니다.
           </Text>
-          <Text style={styles.errorSubText}>
-            네트워크 연결을 확인해주세요.
-          </Text>
+          <Text style={styles.errorSubText}>네트워크 연결을 확인해주세요.</Text>
         </View>
       ) : (
         /* 냉장고 칸 그리드 */
@@ -307,16 +348,15 @@ export default function FridgeScreen() {
                   <View key={rIdx} style={styles.gridRow}>
                     {row.map((comp, cIdx) => {
                       const isSelected =
-                        comp !== null &&
-                        selectedCompartment?.id === comp.id;
+                        comp !== null && selectedCompartment?.id === comp.id;
                       const ingredients = comp
-                        ? ingredientsByCompartment.get(comp.id) ?? []
+                        ? (ingredientsByCompartment.get(comp.id) ?? [])
                         : [];
                       const hasExpiring = ingredients.some(
                         (ing) =>
                           ing.expiration_date &&
                           new Date(ing.expiration_date).getTime() - Date.now() <
-                          3 * 24 * 60 * 60 * 1000
+                            3 * 24 * 60 * 60 * 1000,
                       );
                       return (
                         <Pressable
@@ -326,7 +366,9 @@ export default function FridgeScreen() {
                             isSelected && styles.gridCellSelected,
                             pressed && comp && styles.gridCellPressed,
                             !comp && styles.gridCellEmpty,
-                            hasExpiring && !isSelected && styles.gridCellExpiring,
+                            hasExpiring &&
+                              !isSelected &&
+                              styles.gridCellExpiring,
                           ]}
                           onPress={
                             comp
@@ -375,7 +417,8 @@ export default function FridgeScreen() {
                 ))}
               </View>
               <Text style={styles.gridDesc}>
-                {refrigerator?.pos_x ?? 0} × {refrigerator?.pos_y ?? 0} ({sortedCompartments.length}칸)
+                {refrigerator?.pos_x ?? 0} × {refrigerator?.pos_y ?? 0} (
+                {sortedCompartments.length}칸)
               </Text>
             </View>
           )}
@@ -416,37 +459,31 @@ export default function FridgeScreen() {
               <ActivityIndicator size="small" color="#111" />
               <Text style={styles.loadingText}>재료를 불러오는 중...</Text>
             </View>
-          ) : (() => {
-            const apiItems = compartmentIngredients ?? [];
-            const localItems = selectedCompartment
-              ? localAssignments[selectedCompartment.id] ?? []
-              : [];
-            const merged = [...apiItems, ...localItems];
-            if (merged.length === 0) {
-              return (
-                <View style={styles.sheetEmpty}>
-                  <Ionicons
-                    name="restaurant-outline"
-                    size={40}
-                    color="#ddd"
-                  />
-                  <Text style={styles.sheetEmptyText}>
-                    이 칸에 등록된 식재료가 없습니다.
-                  </Text>
-                </View>
-              );
-            }
-            return (
-              <FlatList
-                data={merged}
-                keyExtractor={(item) => `sheet-${item.id}`}
-                renderItem={renderIngredientItem}
-                style={styles.ingredientList}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 8 }}
-              />
-            );
-          })()}
+          ) : ingredientsError ? (
+            <View style={styles.sheetEmpty}>
+              <Ionicons name="alert-circle-outline" size={40} color="#ddd" />
+              <Text style={styles.sheetEmptyText}>재료를 불러올 수 없습니다.</Text>
+              <Pressable onPress={() => refetchIngredients()} style={styles.retryBtn}>
+                <Text style={styles.retryBtnText}>다시 시도</Text>
+              </Pressable>
+            </View>
+          ) : mergedIngredients.length === 0 ? (
+            <View style={styles.sheetEmpty}>
+              <Ionicons name="restaurant-outline" size={40} color="#ddd" />
+              <Text style={styles.sheetEmptyText}>
+                이 칸에 등록된 식재료가 없습니다.
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={mergedIngredients}
+              keyExtractor={(item) => `sheet-${item.id}`}
+              renderItem={renderIngredientItem}
+              style={styles.ingredientList}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 8 }}
+            />
+          )}
 
           {/* 식재료 추가 버튼 */}
           <Pressable
@@ -529,7 +566,7 @@ export default function FridgeScreen() {
               renderItem={({ item }) => {
                 const isExpiringSoon = item.expiration_date
                   ? new Date(item.expiration_date).getTime() - Date.now() <
-                  3 * 24 * 60 * 60 * 1000
+                    3 * 24 * 60 * 60 * 1000
                   : false;
                 const isExpired = item.expiration_date
                   ? new Date(item.expiration_date) < new Date()
@@ -558,11 +595,17 @@ export default function FridgeScreen() {
                                 storage_type: item.storage_type ?? "FRIDGE",
                                 is_auto_fillable: false,
                               };
+                              // 낙관적 업데이트: 즉시 로컬에 반영 (AsyncStorage에도 저장됨)
                               addLocalAssignment(selectedCompartment.id, newItem);
                               setAddModalVisible(false);
+                              // 백엔드에 배정 저장 (실패해도 로컬 데이터는 유지됨)
+                              assignMutation.mutate({
+                                compartmentId: selectedCompartment.id,
+                                ingredientId: item.id,
+                              });
                             },
                           },
-                        ]
+                        ],
                       );
                     }}
                   >
@@ -582,8 +625,8 @@ export default function FridgeScreen() {
                               styles.pickerMetaText,
                               isExpired && styles.expiredText,
                               isExpiringSoon &&
-                              !isExpired &&
-                              styles.expiringSoonText,
+                                !isExpired &&
+                                styles.expiringSoonText,
                             ]}
                           >
                             유통: {item.expiration_date}
@@ -601,9 +644,8 @@ export default function FridgeScreen() {
                         style={[
                           styles.storageTag,
                           item.storage_type === "FREEZER" &&
-                          styles.storageTagFreezer,
-                          item.storage_type === "ROOM" &&
-                          styles.storageTagRoom,
+                            styles.storageTagFreezer,
+                          item.storage_type === "ROOM" && styles.storageTagRoom,
                         ]}
                       >
                         <Text style={styles.storageTagText}>
@@ -631,24 +673,6 @@ export default function FridgeScreen() {
   );
 }
 
-/**
- * AddIngredientModal을 감싸서 compartmentId를 전달하는 래퍼
- * 기존 AddIngredientModal을 재활용하되, 추후 compartment에 직접 넣는 로직 추가 가능
- */
-function AddIngredientModalWrapper({
-  visible,
-  onClose,
-  compartmentId,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  compartmentId: number | null;
-}) {
-  // AddIngredientModal을 lazy import 하는 대신 inline으로 간단 구현
-  const AddIngredientModal =
-    require("@/components/AddIngredientModal").default;
-  return <AddIngredientModal visible={visible} onClose={onClose} />;
-}
 
 const styles = StyleSheet.create({
   page: {
@@ -855,6 +879,40 @@ const styles = StyleSheet.create({
     color: "#999",
     fontWeight: "600",
   },
+  emptyFridgeState: {
+    flex: 1,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: 14,
+    paddingHorizontal: 32,
+    paddingBottom: 40,
+  },
+  emptyFridgeTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#333",
+  },
+  emptyFridgeDesc: {
+    fontSize: 14,
+    color: "#777",
+    textAlign: "center" as const,
+    lineHeight: 22,
+  },
+  addFridgeBtn: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+    marginTop: 4,
+    paddingVertical: 13,
+    paddingHorizontal: 24,
+    backgroundColor: "#111",
+    borderRadius: 14,
+  },
+  addFridgeBtnText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "800",
+  },
 
   // 바텀시트 스타일
   bottomSheetBackdrop: {
@@ -926,6 +984,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#999",
     fontWeight: "600",
+  },
+  retryBtn: {
+    marginTop: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  retryBtnText: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "700",
   },
   ingredientList: {
     flex: 1,

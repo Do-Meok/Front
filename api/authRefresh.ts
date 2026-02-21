@@ -1,7 +1,7 @@
 /**
  * 토큰 갱신/삭제만 담당 (axios 인터셉터에서 사용, 순환 참조 방지)
  */
-import { RefreshRequest } from "@/types";
+import { RefreshResponse } from "@/types";
 import {
   deleteSecureStore,
   getSecureStore,
@@ -15,15 +15,12 @@ export async function refreshAccessToken(): Promise<string | null> {
   if (!refreshToken) return null;
 
   try {
-    const { data } = await axios.post<RefreshRequest>(`${API_URL}${PREFIX}/users/refresh`, {
+    const { data } = await axios.post<RefreshResponse>(`${API_URL}${PREFIX}/auth/refresh`, {
       refresh_token: refreshToken,
-      refreshToken,
     });
 
-    const newAccess =
-      data?.accessToken ?? data?.access_token ?? data?.token ?? null;
-    const newRefresh =
-      data?.refreshToken ?? data?.refresh_token ?? refreshToken;
+    const newAccess = data?.access_token ?? null;
+    const newRefresh = data?.refresh_token ?? refreshToken;
 
     if (newAccess) {
       await saveSecureStore("accessToken", newAccess);
