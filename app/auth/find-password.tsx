@@ -1,157 +1,136 @@
-import FoodThingLogo from "@/components/FoodThingLogo";
+import DateInputWithCalendar from "@/components/DateInputWithCalendar";
 import InputField from "@/components/InputField";
 import { colors } from "@/constants";
-import useFindPassword from "@/hooks/auth/useFindPassword";
-import { ResetPasswordForm } from "@/types";
+import { formatPhoneNumber } from "@/utils/format";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import {
-    Alert,
     KeyboardAvoidingView,
     Platform,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+type IdentityForm = {
+  email: string;
+  name: string;
+  birth: string;
+  phone_num: string;
+};
+
 export default function FindPasswordScreen() {
-  const findPasswordMutation = useFindPassword();
-  const form = useForm<ResetPasswordForm>({
-    defaultValues: {
-      email: "",
-      name: "",
-      birth: "",
-      phone_num: "",
-      new_password: "",
-      checked_new_password: "",
-    },
+  const form = useForm<IdentityForm>({
+    defaultValues: { email: "", name: "", birth: "", phone_num: "" },
   });
 
-  const onSubmit = (values: ResetPasswordForm) => {
-    if (values.new_password !== values.checked_new_password) {
-      form.setError("checked_new_password", { message: "비밀번호가 일치하지 않습니다." });
-      return;
-    }
-    findPasswordMutation.mutate(values, {
-      onSuccess: () => {
-        Alert.alert("완료", "비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해 주세요.");
-        router.replace("/auth/login");
+  const onSubmit = (values: IdentityForm) => {
+    router.push({
+      pathname: "/auth/reset-password" as any,
+      params: {
+        email: values.email,
+        name: values.name,
+        birth: values.birth,
+        phone_num: values.phone_num.replace(/[^0-9]/g, ""),
       },
     });
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={28} color="#111" />
-      </Pressable>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={28} color="#111" />
+        </Pressable>
+        <Text style={styles.headerTitle}>비밀번호 찾기</Text>
+        <View style={{ width: 44 }} />
+      </View>
       <KeyboardAvoidingView
         style={styles.kav}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.wrap}>
-          <FoodThingLogo size={38} />
-          <Text style={styles.title}>비밀번호 찾기</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.stepLabel}>1단계 · 본인 확인</Text>
+          <Text style={styles.stepDesc}>
+            가입 시 등록한 정보를 입력해 주세요.
+          </Text>
           <View style={styles.form}>
-            <FormProvider {...form}>
-              <Controller
-                name="email"
-                control={form.control}
-                rules={{ required: "이메일을 입력해 주세요." }}
-                render={({ field, fieldState }) => (
-                  <InputField
-                    placeholder="이메일"
-                    inputMode="email"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    error={fieldState.error?.message}
-                  />
-                )}
-              />
-              <Controller
-                name="name"
-                control={form.control}
-                rules={{ required: "이름을 입력해 주세요." }}
-                render={({ field, fieldState }) => (
-                  <InputField
-                    placeholder="이름"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    error={fieldState.error?.message}
-                  />
-                )}
-              />
-              <Controller
-                name="birth"
-                control={form.control}
-                rules={{ required: "생년월일을 입력해 주세요." }}
-                render={({ field, fieldState }) => (
-                  <InputField
+            <Controller
+              name="email"
+              control={form.control}
+              rules={{ required: "이메일을 입력해 주세요." }}
+              render={({ field, fieldState }) => (
+                <InputField
+                  placeholder="이메일"
+                  inputMode="email"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  error={fieldState.error?.message}
+                />
+              )}
+            />
+            <Controller
+              name="name"
+              control={form.control}
+              rules={{ required: "이름을 입력해 주세요." }}
+              render={({ field, fieldState }) => (
+                <InputField
+                  placeholder="이름"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  error={fieldState.error?.message}
+                />
+              )}
+            />
+            <Controller
+              name="birth"
+              control={form.control}
+              rules={{ required: "생년월일을 입력해 주세요." }}
+              render={({ field, fieldState }) => (
+                <View>
+                  <DateInputWithCalendar
                     placeholder="생년월일 (예: 1990-01-01)"
                     value={field.value}
                     onChangeText={field.onChange}
-                    error={fieldState.error?.message}
                   />
-                )}
-              />
-              <Controller
-                name="phone_num"
-                control={form.control}
-                rules={{ required: "전화번호를 입력해 주세요." }}
-                render={({ field, fieldState }) => (
-                  <InputField
-                    placeholder="전화번호"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    keyboardType="phone-pad"
-                    error={fieldState.error?.message}
-                  />
-                )}
-              />
-              <Controller
-                name="new_password"
-                control={form.control}
-                rules={{ required: "새 비밀번호를 입력해 주세요." }}
-                render={({ field, fieldState }) => (
-                  <InputField
-                    placeholder="새 비밀번호"
-                    secureTextEntry
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    error={fieldState.error?.message}
-                  />
-                )}
-              />
-              <Controller
-                name="checked_new_password"
-                control={form.control}
-                rules={{ required: "비밀번호 확인을 입력해 주세요." }}
-                render={({ field, fieldState }) => (
-                  <InputField
-                    placeholder="새 비밀번호 확인"
-                    secureTextEntry
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    error={fieldState.error?.message}
-                  />
-                )}
-              />
-            </FormProvider>
+                  {fieldState.error?.message && (
+                    <Text style={styles.fieldError}>{fieldState.error.message}</Text>
+                  )}
+                </View>
+              )}
+            />
+            <Controller
+              name="phone_num"
+              control={form.control}
+              rules={{ required: "전화번호를 입력해 주세요." }}
+              render={({ field, fieldState }) => (
+                <InputField
+                  placeholder="전화번호 (예: 010-1234-5678)"
+                  value={field.value}
+                  onChangeText={(text) => field.onChange(formatPhoneNumber(text))}
+                  keyboardType="phone-pad"
+                  maxLength={13}
+                  error={fieldState.error?.message}
+                />
+              )}
+            />
             <Pressable
-              style={[styles.primaryBtn, findPasswordMutation.isPending && styles.disabled]}
+              style={styles.primaryBtn}
               onPress={form.handleSubmit(onSubmit)}
-              disabled={findPasswordMutation.isPending}
             >
-              <Text style={styles.primaryBtnText}>
-                {findPasswordMutation.isPending ? "처리 중…" : "비밀번호 재설정"}
-              </Text>
+              <Text style={styles.primaryBtnText}>다음</Text>
             </Pressable>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -159,28 +138,48 @@ export default function FindPasswordScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.WHITE },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: colors.BLACK,
+  },
   backBtn: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10,
   },
   kav: { flex: 1 },
-  wrap: {
-    flex: 1,
+  scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 60,
-    gap: 16,
-    alignItems: "center",
+    paddingTop: 28,
+    paddingBottom: 32,
+    gap: 8,
   },
-  title: { fontSize: 20, fontWeight: "800", color: colors.BLACK },
-  form: { width: "100%", maxWidth: 420, gap: 12 },
+  stepLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.INACTIVE,
+    marginBottom: 2,
+  },
+  stepDesc: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.BLACK,
+    marginBottom: 8,
+  },
+  form: { gap: 12 },
   primaryBtn: {
-    height: 46,
+    height: 50,
     borderRadius: 12,
     backgroundColor: colors.BLACK,
     alignItems: "center",
@@ -188,5 +187,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   primaryBtnText: { color: colors.WHITE, fontSize: 16, fontWeight: "800" },
-  disabled: { opacity: 0.6 },
+  fieldError: { color: "#e53e3e", fontSize: 12, marginTop: 4, paddingHorizontal: 4 },
 });

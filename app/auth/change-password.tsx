@@ -18,6 +18,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+const MIN_PW_LENGTH = 8;
+
 export default function ChangePasswordScreen() {
   const changePasswordMutation = useFindInLoginPassword();
   const form = useForm<FindPasswordForm>({
@@ -29,6 +31,12 @@ export default function ChangePasswordScreen() {
   });
 
   const onSubmit = (values: FindPasswordForm) => {
+    if (values.new_password.length < MIN_PW_LENGTH) {
+      form.setError("new_password", {
+        message: `비밀번호는 ${MIN_PW_LENGTH}자 이상이어야 합니다.`,
+      });
+      return;
+    }
     if (values.new_password !== values.checked_new_password) {
       form.setError("checked_new_password", { message: "비밀번호가 일치하지 않습니다." });
       return;
@@ -38,21 +46,44 @@ export default function ChangePasswordScreen() {
         Alert.alert("완료", "비밀번호가 변경되었습니다.");
         router.back();
       },
+      onError: (error: any) => {
+        const status = error?.response?.status;
+        const message: string =
+          error?.response?.data?.message ?? error?.response?.data?.detail ?? "";
+
+        if (
+          status === 400 &&
+          /현재 비밀번호|current.?password|incorrect|틀린|wrong/i.test(message)
+        ) {
+          form.setError("current_password", {
+            message: "현재 비밀번호가 올바르지 않습니다.",
+          });
+        } else if (status === 401) {
+          form.setError("current_password", {
+            message: "현재 비밀번호가 올바르지 않습니다.",
+          });
+        } else {
+          Alert.alert("오류", message || "비밀번호 변경에 실패했습니다.");
+        }
+      },
     });
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={28} color="#111" />
-      </Pressable>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={28} color="#111" />
+        </Pressable>
+        <Text style={styles.headerTitle}>비밀번호 변경</Text>
+        <View style={{ width: 44 }} />
+      </View>
       <KeyboardAvoidingView
         style={styles.kav}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.wrap}>
           <FoodThingLogo size={38} />
-          <Text style={styles.title}>비밀번호 변경</Text>
           <View style={styles.form}>
             <FormProvider {...form}>
               <Controller
@@ -119,25 +150,34 @@ export default function ChangePasswordScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.WHITE },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: colors.BLACK,
+  },
   backBtn: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10,
   },
   kav: { flex: 1 },
   wrap: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 32,
     gap: 16,
     alignItems: "center",
   },
-  title: { fontSize: 20, fontWeight: "800", color: colors.BLACK },
   form: { width: "100%", maxWidth: 420, gap: 12 },
   primaryBtn: {
     height: 46,

@@ -14,12 +14,18 @@ import { router } from "expo-router";
 import React, { useMemo } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const { height: SCREEN_H } = Dimensions.get("window");
+// 기기 높이에 따라 히어로 이미지 높이 조정 (소형 기기 대응)
+const HERO_HEIGHT = Math.round(Math.min(280, SCREEN_H * 0.32));
 
 export default function HomeScreen() {
   const {
@@ -106,7 +112,11 @@ export default function HomeScreen() {
         onPressBell={() => { }}
         onPressProfile={() => router.push("/mypage")}
       />
-      <View style={styles.page}>
+      <ScrollView
+        style={styles.page}
+        contentContainerStyle={styles.pageContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* 오늘의 추천 (보유 식재료 기반, 레시피 추천과 동일 API) */}
         {isRecommendLoading && !recommendationsData ? (
           <View style={styles.recommendLoading}>
@@ -124,7 +134,7 @@ export default function HomeScreen() {
             titleLabel="오늘의 추천"
             items={featuredItems}
             onPressItem={handlePressRecipeItem}
-            heroImageHeight={280}
+            heroImageHeight={HERO_HEIGHT}
           />
         ) : null}
 
@@ -138,7 +148,7 @@ export default function HomeScreen() {
             }}
           />
         )}
-      </View>
+      </ScrollView>
 
       {/* 초기 데이터 로딩 화면 */}
       <Modal visible={isInitialLoading} transparent animationType="fade">
@@ -182,7 +192,10 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     marginTop: 10,
-    gap: 45,
+  },
+  pageContent: {
+    gap: 28,
+    paddingBottom: 24,
   },
   recommendLoading: {
     alignItems: "center",

@@ -31,16 +31,19 @@ export default function ChangeNicknameScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={28} color="#111" />
-      </Pressable>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={28} color="#111" />
+        </Pressable>
+        <Text style={styles.headerTitle}>닉네임 변경</Text>
+        <View style={{ width: 44 }} />
+      </View>
       <KeyboardAvoidingView
         style={styles.kav}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.wrap}>
           <FoodThingLogo size={38} />
-          <Text style={styles.title}>닉네임 변경</Text>
           <View style={styles.form}>
             <FormProvider {...form}>
               <Controller
@@ -78,25 +81,34 @@ export default function ChangeNicknameScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.WHITE },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: colors.BLACK,
+  },
   backBtn: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10,
   },
   kav: { flex: 1 },
   wrap: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 32,
     gap: 16,
     alignItems: "center",
   },
-  title: { fontSize: 20, fontWeight: "800", color: colors.BLACK },
   form: { width: "100%", maxWidth: 420, gap: 12 },
   primaryBtn: {
     height: 46,

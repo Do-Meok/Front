@@ -1,6 +1,5 @@
 import SettingItem from "@/components/SettingItem";
 import { colors } from "@/constants";
-import useRefreshToken from "@/hooks/auth/useRefreshToken";
 import useAuth from "@/hooks/useAuth";
 import { useNavigationContext } from "@/providers/NavigationProvider";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,7 +13,7 @@ import {
   StyleSheet,
   Switch,
   Text,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -36,23 +35,30 @@ function renderHeader() {
 
 export default function MyPageScreen() {
   const { userInfoQuery } = useAuth();
-  const { data: userInfo, isLoading, error, refetch, isRefetching } = userInfoQuery;
-  const { isOnboardingCompleted, setOnboardingCompleted } = useNavigationContext();
-  const refreshTokenMutation = useRefreshToken();
+  const {
+    data: userInfo,
+    isLoading,
+    error,
+    refetch,
+    isRefetching,
+  } = userInfoQuery;
+  const { isOnboardingCompleted, setOnboardingCompleted } =
+    useNavigationContext();
 
-  const missingInfo = userInfo && (!userInfo.name || !userInfo.birth || !userInfo.phone_num);
-
+  const missingInfo =
+    userInfo && (!userInfo.name || !userInfo.birth || !userInfo.phone_num);
 
   // 401 또는 서버 500(토큰 만료 메시지) → 로그인하러 가기
   const status = (error as any)?.response?.status;
   const msg = String(
     (error as any)?.response?.data?.message ??
-    (error as any)?.response?.data?.detail ??
-    ""
+      (error as any)?.response?.data?.detail ??
+      "",
   );
   const isUnauthorized =
     error &&
-    (status === 401 || (status === 500 && /토큰|token|expired|만료/i.test(msg)));
+    (status === 401 ||
+      (status === 500 && /토큰|token|expired|만료/i.test(msg)));
 
   // 로딩 중
   if (isLoading && !userInfo) {
@@ -99,7 +105,11 @@ export default function MyPageScreen() {
       <SafeAreaView style={styles.container}>
         {renderHeader()}
         <View style={styles.loginPromptContainer}>
-          <Ionicons name="cloud-offline-outline" size={64} color={colors.INACTIVE} />
+          <Ionicons
+            name="cloud-offline-outline"
+            size={64}
+            color={colors.INACTIVE}
+          />
           <Text style={styles.loginPromptText}>
             데이터를 불러오지 못했어요.
           </Text>
@@ -141,22 +151,22 @@ export default function MyPageScreen() {
           <Ionicons name="person" size={48} color={colors.BLACK} />
         </View>
 
-        {/* 유저 정보 */}
+        {/* 유저 정보 - 본인인증 정보 없을 시 안내 카드 */}
         {missingInfo && (
           <View style={styles.card}>
             <View style={styles.infoRow}>
               <View>
                 <Text style={styles.infoLabel}>본인인증 정보가 없습니다</Text>
-                <Text style={[styles.infoValue, { marginTop: 4, fontSize: 13, fontWeight: "400" }]}>
+                <Text
+                  style={[
+                    styles.infoValue,
+                    { marginTop: 4, fontSize: 13, fontWeight: "400" },
+                  ]}
+                >
                   아이디/비밀번호 찾기를 위해 정보를 등록해주세요.
                 </Text>
               </View>
             </View>
-            <SettingItem
-              label="내 정보 등록하기"
-              onPress={() => router.push("/auth/fill-user-info")}
-              style={{ borderBottomWidth: 0, paddingHorizontal: 0 }}
-            />
           </View>
         )}
 
@@ -173,21 +183,36 @@ export default function MyPageScreen() {
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>이름</Text>
-            <Text style={[styles.infoValue, !userInfo?.name && styles.infoValueEmpty]}>
+            <Text
+              style={[
+                styles.infoValue,
+                !userInfo?.name && styles.infoValueEmpty,
+              ]}
+            >
               {userInfo?.name || "-"}
             </Text>
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>생년월일</Text>
-            <Text style={[styles.infoValue, !userInfo?.birth && styles.infoValueEmpty]}>
+            <Text
+              style={[
+                styles.infoValue,
+                !userInfo?.birth && styles.infoValueEmpty,
+              ]}
+            >
               {userInfo?.birth || "-"}
             </Text>
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>전화번호</Text>
-            <Text style={[styles.infoValue, !userInfo?.phone_num && styles.infoValueEmpty]}>
+            <Text
+              style={[
+                styles.infoValue,
+                !userInfo?.phone_num && styles.infoValueEmpty,
+              ]}
+            >
               {userInfo?.phone_num || "-"}
             </Text>
           </View>
@@ -202,6 +227,19 @@ export default function MyPageScreen() {
             <SettingItem
               label="닉네임 변경"
               onPress={() => router.push("/auth/change-nickname")}
+            />
+            <SettingItem
+              label={missingInfo ? "내 정보 등록하기" : "내 정보 수정하기"}
+              onPress={() =>
+                router.push({
+                  pathname: "/auth/fill-user-info" as any,
+                  params: {
+                    name: userInfo?.name ?? "",
+                    birth: userInfo?.birth ?? "",
+                    phone_num: userInfo?.phone_num ?? "",
+                  },
+                })
+              }
             />
           </View>
 

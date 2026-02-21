@@ -123,7 +123,9 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
       const inLogoutLoading = segments[1] === "logout-loading";
       // 로그인 상태에서도 접근 가능한 auth 화면 (마이페이지에서 진입, 로그아웃 중)
       const isAuthenticatedAuthScreen =
-        segments[1] === "change-password" || segments[1] === "change-nickname";
+        segments[1] === "change-password" ||
+        segments[1] === "change-nickname" ||
+        segments[1] === "fill-user-info";
       if ((inOnboarding || inAuth) && !inAuthLoading && !inLogoutLoading && !isAuthenticatedAuthScreen) {
         // 온보딩/auth(로딩·로그아웃·설정 화면 제외)에 있으면 tabs(홈)로 이동
         router.replace("/(tabs)");

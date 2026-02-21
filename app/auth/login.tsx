@@ -1,10 +1,10 @@
+import BackHeader from "@/components/BackHeader";
 import EmailInput from "@/components/EmailInput";
 import FoodThingLogo from "@/components/FoodThingLogo";
 import PasswordInput from "@/components/PasswordInput";
 import { colors } from "@/constants";
 import useAuth from "@/hooks/useAuth";
 import { LoginForm } from "@/types";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -26,49 +26,36 @@ export default function LoginFormScreen() {
       password: "",
     },
   });
+
   const onPressLogin = (formValues: LoginForm) => {
     loginMutation.mutate(formValues);
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* 뒤로가기 버튼 - 왼쪽 위 */}
-      <Pressable
-        onPress={() => {
-          // AuthButton 화면으로 돌아가기
-          router.back();
-        }}
-        hitSlop={12}
-        style={styles.backBtn}
-      >
-        <Ionicons name="chevron-back" size={28} color="#111" />
-      </Pressable>
+      <BackHeader onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.kav}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.wrap}>
-          {/* 로고 */}
           <View style={styles.logoBox}>
             <FoodThingLogo size={44} />
           </View>
 
-          {/* 입력 */}
           <View style={styles.form}>
             <FormProvider {...loginForm}>
               <EmailInput />
               <PasswordInput />
             </FormProvider>
 
-            {/* 로그인 버튼 */}
             <Pressable
-              style={[styles.primaryBtn]}
+              style={styles.primaryBtn}
               onPress={loginForm.handleSubmit(onPressLogin)}
             >
               <Text style={styles.primaryBtnText}>로그인</Text>
             </Pressable>
 
-            {/* 회원가입 / 계정찾기 */}
             <View style={styles.actionRow}>
               <Pressable
                 style={styles.actionBtn}
@@ -94,16 +81,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.WHITE,
-  },
-  backBtn: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
   },
   kav: {
     flex: 1,

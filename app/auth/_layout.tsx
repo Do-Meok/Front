@@ -64,6 +64,10 @@ export default function AuthLayout() {
         options={{ title: "본인인증 정보 등록", headerShown: false }}
       />
       <Stack.Screen
+        name="reset-password"
+        options={{ title: "비밀번호 재설정", headerShown: false }}
+      />
+      <Stack.Screen
         name="logout-loading"
         options={{ title: "로그아웃", headerShown: false }}
       />

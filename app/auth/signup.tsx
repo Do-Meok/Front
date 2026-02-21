@@ -1,3 +1,4 @@
+import BackHeader from "@/components/BackHeader";
 import CheckPasswordInput from "@/components/CheckPasswordInput";
 import DateInputWithCalendar from "@/components/DateInputWithCalendar";
 import EmailInput from "@/components/EmailInput";
@@ -14,6 +15,7 @@ import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
+  Alert,
   Animated,
   KeyboardAvoidingView,
   Platform,
@@ -58,18 +60,56 @@ export default function SignUpScreen() {
   });
 
   const onSubmit = (formValues: SignUpForm) => {
-    if (!privacyAgreed) {
-      formValues.name = null;
-      formValues.birth = null;
-      formValues.phone_num = null;
-    }
-    signupMutation.mutate(formValues, {
+    const birthRaw = formValues.birth?.trim() ?? "";
+    const isValidBirth = /^\d{4}-\d{2}-\d{2}$/.test(birthRaw);
+
+    // 개인정보 동의 시에만 선택 필드 포함, null은 아예 제외
+    const optionalFields = privacyAgreed
+      ? {
+          ...(formValues.name?.trim() ? { name: formValues.name.trim() } : {}),
+          ...(isValidBirth ? { birth: birthRaw } : {}),
+          ...(formValues.phone_num?.trim()
+            ? { phone_num: formValues.phone_num.replace(/[^0-9]/g, "") }
+            : {}),
+        }
+      : {};
+
+    const payload = {
+      email: formValues.email.trim(),
+      password: formValues.password,
+      checked_password: formValues.checked_password,
+      nickname: formValues.nickname.trim(),
+      ...optionalFields,
+    };
+
+    signupMutation.mutate(payload as SignUpForm, {
+      onSuccess: () => {
+        Alert.alert("회원가입 완료", "회원가입이 성공적으로 완료되었습니다.", [
+          { text: "확인", onPress: () => router.replace("/auth") },
+        ]);
+      },
       onError: (error: any) => {
-        if (error?.response?.status === 409) {
+        const status = error?.response?.status;
+        const data = error?.response?.data;
+        let message = "";
+        if (typeof data?.message === "string") {
+          message = data.message;
+        } else if (typeof data?.detail === "string") {
+          message = data.detail;
+        } else if (Array.isArray(data?.detail)) {
+          // FastAPI 422 validation error
+          message = data.detail
+            .map((d: any) => d.msg ?? d.message ?? "")
+            .filter(Boolean)
+            .join("\n");
+        }
+        if (status === 409) {
           signupForm.setError("email", {
             type: "manual",
             message: "이미 가입된 이메일입니다.",
           });
+        } else {
+          Alert.alert("회원가입 실패", message || "회원가입에 실패했습니다.");
         }
       },
     });
@@ -77,6 +117,7 @@ export default function SignUpScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <BackHeader onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.kav}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -100,7 +141,12 @@ export default function SignUpScreen() {
 
             {/* ── 개인정보 수집 동의 ── */}
             <Pressable style={styles.checkRow} onPress={togglePrivacy}>
-              <View style={[styles.checkbox, privacyAgreed && styles.checkboxChecked]}>
+              <View
+                style={[
+                  styles.checkbox,
+                  privacyAgreed && styles.checkboxChecked,
+                ]}
+              >
                 {privacyAgreed && (
                   <Ionicons name="checkmark" size={14} color="#fff" />
                 )}
@@ -111,9 +157,18 @@ export default function SignUpScreen() {
             </Pressable>
 
             {/* ── 본인인증 탭 (동의 시 슬라이드 다운) ── */}
-            <Animated.View style={[styles.identitySection, { maxHeight: sectionHeight, overflow: "hidden" }]}>
+            <Animated.View
+              style={[
+                styles.identitySection,
+                { maxHeight: sectionHeight, overflow: "hidden" },
+              ]}
+            >
               <View style={styles.identityHeader}>
-                <Ionicons name="person-circle-outline" size={18} color={colors.BLACK} />
+                <Ionicons
+                  name="person-circle-outline"
+                  size={18}
+                  color={colors.BLACK}
+                />
                 <Text style={styles.identityTitle}>본인인증</Text>
               </View>
               <Text style={styles.identityDesc}>
@@ -168,7 +223,11 @@ export default function SignUpScreen() {
             {/* ── 미동의 안내 ── */}
             {!privacyAgreed && (
               <View style={styles.noticeRow}>
-                <Ionicons name="information-circle-outline" size={14} color={colors.INACTIVE} />
+                <Ionicons
+                  name="information-circle-outline"
+                  size={14}
+                  color={colors.INACTIVE}
+                />
                 <Text style={styles.noticeText}>
                   미동의 시 아이디·비밀번호 찾기가 어려울 수 있습니다.
                 </Text>
@@ -176,7 +235,10 @@ export default function SignUpScreen() {
             )}
 
             <Pressable
-              style={[styles.primaryBtn, signupMutation.isPending && styles.disabled]}
+              style={[
+                styles.primaryBtn,
+                signupMutation.isPending && styles.disabled,
+              ]}
               onPress={signupForm.handleSubmit(onSubmit)}
               disabled={signupMutation.isPending}
             >
@@ -208,7 +270,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingVertical: 32,
+    paddingTop: 8,
+    paddingBottom: 32,
     alignItems: "center",
     justifyContent: "center",
     gap: 16,

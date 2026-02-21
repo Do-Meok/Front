@@ -29,7 +29,7 @@ function PasswordInput() {
           inputMode="text"
           returnKeyType="next"
           submitBehavior="submit"
-          onSubmitEditing={() => setFocus("check_password")}
+          onSubmitEditing={() => setFocus("checked_password")}
           value={value}
           onChangeText={onChange}
           error={error?.message}

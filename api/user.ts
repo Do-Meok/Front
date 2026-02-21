@@ -32,8 +32,8 @@ async function getUserInfo(): Promise<InfoResponse> {
 }
 
 /** 이메일 찾기 */
-async function findEmail(body: FindEmailForm): Promise<void> {
-  const { data } = await axiosInstance.post(`${PREFIX}/users/find-email`, body);
+async function findEmail(body: FindEmailForm): Promise<{ email: string }> {
+  const { data } = await axiosInstance.post<{ email: string }>(`${PREFIX}/users/find-email`, body);
 
   return data;
 }

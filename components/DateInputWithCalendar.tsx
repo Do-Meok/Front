@@ -29,7 +29,15 @@ export default function DateInputWithCalendar({
   const [showPicker, setShowPicker] = useState(false);
 
   const handleTextChange = (raw: string) => {
-    onChangeText(formatInputToYYYYMMDD(raw));
+    // 숫자·하이픈 이외 문자 제거, 최대 10자 (YYYY-MM-DD)
+    const sanitized = raw.replace(/[^\d-]/g, "").slice(0, 10);
+    // 하이픈이 없는 순수 숫자 입력 → 자동 포맷 (20020321 → 2002-03-21)
+    // 하이픈이 있으면 그대로 전달 (중간 수정 시 자릿수 밀림 방지)
+    if (/^\d+$/.test(sanitized)) {
+      onChangeText(formatInputToYYYYMMDD(sanitized));
+    } else {
+      onChangeText(sanitized);
+    }
   };
 
   const pickerValue = (() => {
