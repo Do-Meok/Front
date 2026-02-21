@@ -1,7 +1,9 @@
 import { refreshAccessToken } from "@/api/authRefresh";
+import axiosInstance from "@/api/axios";
 import { consumeGuestChosen } from "@/utils/guestMode";
 import { getSecureStore } from "@/utils/secureStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SplashScreen from "expo-splash-screen";
 import { useRouter, useSegments } from "expo-router";
 import {
   createContext,
@@ -52,22 +54,26 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
       const completed = await AsyncStorage.getItem("onboarding_completed");
       let token = await getSecureStore("accessToken");
 
-      // 토큰이 없으면 리프레시 토큰으로 재발급 시도
+      // 액세스 토큰이 없으면 리프레시 토큰으로 재발급 시도 (자동 로그인)
       if (!token) {
         const newToken = await refreshAccessToken();
         if (newToken) {
           token = newToken;
+          // 재발급된 토큰을 axios 기본 헤더에 즉시 반영
+          axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
         }
       }
 
       setIsOnboardingCompleted(completed === "true");
       setHasTokenState(!!token);
-      setIsReady(true);
     } catch (error) {
       console.error("인증 상태 확인 실패:", error);
       setIsOnboardingCompleted(false);
       setHasTokenState(false);
+    } finally {
       setIsReady(true);
+      // 인증 확인 완료 후 스플래시 스크린 해제
+      SplashScreen.hideAsync();
     }
   }, []);
 
@@ -114,20 +120,15 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     // 3. 온보딩 완료 + 로그인 완료
     if (hasToken) {
       const inAuthLoading = segments[1] === "loading";
-      // 로그인 상태에서도 접근 가능한 auth 화면 (마이페이지에서 진입)
+      const inLogoutLoading = segments[1] === "logout-loading";
+      // 로그인 상태에서도 접근 가능한 auth 화면 (마이페이지에서 진입, 로그아웃 중)
       const isAuthenticatedAuthScreen =
         segments[1] === "change-password" || segments[1] === "change-nickname";
-      if ((inOnboarding || inAuth) && !inAuthLoading && !isAuthenticatedAuthScreen) {
-        // 온보딩/auth(로딩·설정 화면 제외)에 있으면 tabs(홈)로 이동
+      if ((inOnboarding || inAuth) && !inAuthLoading && !inLogoutLoading && !isAuthenticatedAuthScreen) {
+        // 온보딩/auth(로딩·로그아웃·설정 화면 제외)에 있으면 tabs(홈)로 이동
         router.replace("/(tabs)");
       }
       // 초기 라우트면 홈에 그대로 있음 (리다이렉트 없음)
-      return;
-    }
-
-    // 4. 로그아웃 로딩 중에는 리다이렉트하지 않음
-    const inLogoutLoading = inAuth && segments[1] === "logout-loading";
-    if (inLogoutLoading) {
       return;
     }
   }, [isReady, isOnboardingCompleted, hasToken, segments, router]);

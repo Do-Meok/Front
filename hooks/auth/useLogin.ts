@@ -3,6 +3,7 @@ import axiosInstance from "@/api/axios";
 import { useNavigationContext } from "@/providers/NavigationProvider";
 import { saveSecureStore } from "@/utils/secureStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
 import { Alert } from "react-native";
 
@@ -28,6 +29,8 @@ function useLogin() {
         await AsyncStorage.removeItem("is_guest");
         axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         setHasToken(true);
+        // setHasToken과 같은 동기 블록에서 호출해야 네비게이션 가드와 충돌 없이 로딩 화면을 보여줄 수 있음
+        router.replace("/auth/loading");
       } else {
         console.warn("로그인 응답에 토큰이 없습니다:", data);
         Alert.alert("오류", "로그인 응답에 토큰이 없습니다.");

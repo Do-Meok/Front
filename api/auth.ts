@@ -1,7 +1,4 @@
-import {
-  LoginForm,
-  TokenRefreshResponse,
-} from "@/types";
+import { LoginForm, TokenRefreshResponse } from "@/types";
 import { getSecureStore } from "@/utils/secureStore";
 import { clearStoredTokens } from "./authRefresh";
 import axiosInstance, { PREFIX } from "./axios";
@@ -10,7 +7,7 @@ import axiosInstance, { PREFIX } from "./axios";
 async function login(body: LoginForm): Promise<TokenRefreshResponse> {
   const { data } = await axiosInstance.post<TokenRefreshResponse>(
     `${PREFIX}/auth/log-in`,
-    body
+    body,
   );
 
   return data;
@@ -35,17 +32,11 @@ async function refreshToken(): Promise<TokenRefreshResponse> {
   const storedRefresh = await getSecureStore("refreshToken");
   const { data } = await axiosInstance.post<TokenRefreshResponse>(
     `${PREFIX}/auth/refresh`,
-    { refresh_token: storedRefresh }
+    { refresh_token: storedRefresh },
   );
 
   return data;
 }
 
-
-
-export {
-  login,
-  logout,
-  refreshToken
-};
+export { login, logout, refreshToken };
 

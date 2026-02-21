@@ -6,7 +6,7 @@ import useAuth from "@/hooks/useAuth";
 import { LoginForm } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useEffect } from "react";
+import React from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import {
   KeyboardAvoidingView,
@@ -29,11 +29,6 @@ export default function LoginFormScreen() {
   const onPressLogin = (formValues: LoginForm) => {
     loginMutation.mutate(formValues);
   };
-
-  useEffect(() => {
-    if (!loginMutation.isSuccess) return;
-    router.replace("/auth/loading");
-  }, [loginMutation.isSuccess]);
 
   return (
     <SafeAreaView style={styles.safe}>

@@ -63,6 +63,10 @@ export default function AuthLayout() {
         name="fill-user-info"
         options={{ title: "본인인증 정보 등록", headerShown: false }}
       />
+      <Stack.Screen
+        name="logout-loading"
+        options={{ title: "로그아웃", headerShown: false }}
+      />
     </Stack>
   );
 }
