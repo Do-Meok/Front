@@ -13,10 +13,12 @@ import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
 import type { RecipeRecommendationItem } from "@/types";
+import { getCompletedRecipeIds } from "@/utils/completedRecipes";
 import { getSecureStore } from "@/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { router } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Modal,
@@ -69,6 +71,15 @@ type Mode = "list" | "recommend" | "log";
 export default function RecipeFeed({ mode }: { mode: Mode }) {
   const [q, setQ] = useState("");
   const [hasToken, setHasToken] = useState(false);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+
+  useFocusEffect(
+    useCallback(() => {
+      if (mode === "log") {
+        getCompletedRecipeIds().then(setCompletedIds);
+      }
+    }, [mode])
+  );
 
   const {
     data: recommendationsData,
@@ -150,11 +161,12 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
         cookMin: 0,
         image: undefined,
         tags: [] as string[],
+        isCompleted: completedIds.has(String(r.id)),
       }));
     }
     if (mode === "recommend") return [];
     return MOCK_RECIPES;
-  }, [mode, savedRecipes]);
+  }, [mode, savedRecipes, completedIds]);
 
   const list = useMemo(() => {
     const qq = q.trim().toLowerCase();

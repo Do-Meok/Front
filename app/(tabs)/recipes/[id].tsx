@@ -1,15 +1,50 @@
+import { deleteIngredient } from "@/api/ingredients";
+import queryClient from "@/api/queryClient";
 import PageHeader from "@/components/PageHeader";
 import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
+import { queryKey } from "@/constants";
+import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
-import type { SaveRecipeResponse } from "@/types";
+import type { GetIngredientResponse, SaveRecipeResponse } from "@/types";
+import { getCompletedRecipeIds, markRecipeCompleted } from "@/utils/completedRecipes";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "");
+
+function ingredientMatches(recipeName: string, userIngredientName: string): boolean {
+  const rn = normalize(recipeName);
+  const un = normalize(userIngredientName);
+  if (rn === un) return true;
+  const [shorter, longer] = rn.length <= un.length ? [rn, un] : [un, rn];
+  return shorter.length >= 2 && longer.includes(shorter);
+}
 
 export default function RecipeDetailScreen() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data: recipes, isLoading, error } = useGetRecipes();
+  const { data: ingredients = [] } = useGetIngredients();
+
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isLoadingCompleted, setIsLoadingCompleted] = useState(true);
+  const [isCompletingRecipe, setIsCompletingRecipe] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    getCompletedRecipeIds().then((ids) => {
+      setIsCompleted(ids.has(String(id)));
+      setIsLoadingCompleted(false);
+    });
+  }, [id]);
 
   const goBack = () => {
     if (from === "home") {
@@ -28,11 +63,60 @@ export default function RecipeDetailScreen() {
     );
   }, [recipes, id]);
 
+  // 레시피 재료 이름 → 사용자 보유 재료 매핑
+  const matchedMap = useMemo(() => {
+    if (!detail || !ingredients.length) return new Map<string, GetIngredientResponse>();
+    const map = new Map<string, GetIngredientResponse>();
+    for (const recipeIng of detail.use_ingredients) {
+      const found = ingredients.find((userIng) =>
+        ingredientMatches(recipeIng.name, userIng.ingredient_name)
+      );
+      if (found) {
+        map.set(recipeIng.name, found);
+      }
+    }
+    return map;
+  }, [detail, ingredients]);
+
+  const handleCompleteRecipe = () => {
+    if (!detail || matchedMap.size === 0) return;
+    Alert.alert(
+      "요리 완료",
+      `보유 중인 재료 ${matchedMap.size}개가 소진 처리됩니다.\n계속하시겠습니까?`,
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "완료",
+          onPress: async () => {
+            setIsCompletingRecipe(true);
+            try {
+              await Promise.all(
+                [...matchedMap.values()].map((ing) => deleteIngredient(ing.id))
+              );
+              queryClient.invalidateQueries({ queryKey: [queryKey.INGREDIENTS] });
+              await markRecipeCompleted(String(detail.id));
+              setIsCompleted(true);
+            } catch {
+              Alert.alert("오류", "재료 소진 처리 중 오류가 발생했습니다.");
+            } finally {
+              setIsCompletingRecipe(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const showCompleteBtn =
+    !!detail &&
+    !isCompleted &&
+    !isLoadingCompleted &&
+    matchedMap.size > 0 &&
+    !isLoading;
+
   const renderBody = () => {
     if (isLoading) {
-      return (
-        <RecipeLoadingScreen message="레시피를 받아오는 중입니다." />
-      );
+      return <RecipeLoadingScreen message="레시피를 받아오는 중입니다." />;
     }
     if (error || !detail) {
       return (
@@ -49,14 +133,19 @@ export default function RecipeDetailScreen() {
       );
     }
     return (
-      <>
-        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-          {/* 헤더 카드 */}
-          <View style={styles.hero}>
+      <ScrollView contentContainerStyle={{ paddingBottom: showCompleteBtn ? 96 : 24 }}>
+        {/* 헤더 카드 */}
+        <View style={styles.hero}>
           <View style={styles.heroIcon}>
             <Ionicons name="restaurant-outline" size={28} color="#111" />
           </View>
           <Text style={styles.h1}>{detail.food}</Text>
+          {isCompleted && (
+            <View style={styles.completedBadge}>
+              <Ionicons name="checkmark-circle" size={14} color="#fff" />
+              <Text style={styles.completedBadgeText}>요리 완료</Text>
+            </View>
+          )}
           {detail.created_at && (
             <Text style={styles.createdAt}>
               저장일: {detail.created_at.slice(0, 10)}
@@ -66,16 +155,35 @@ export default function RecipeDetailScreen() {
 
         {/* 재료 섹션 */}
         <Text style={styles.sectionTitle}>사용할 식재료</Text>
+        {matchedMap.size > 0 && !isCompleted && (
+          <Text style={styles.matchHint}>
+            보유 중인 재료가 초록색으로 표시됩니다
+          </Text>
+        )}
         <View style={styles.box}>
-          {detail.use_ingredients.map((it) => (
-            <View key={it.name} style={styles.ingRow}>
-              <Ionicons name="checkmark-circle-outline" size={18} color="#666" />
-              <Text style={styles.ingText}>{it.name}</Text>
-              {it.amount ? (
-                <Text style={styles.ingAmount}>{it.amount}</Text>
-              ) : null}
-            </View>
-          ))}
+          {detail.use_ingredients.map((it) => {
+            const isMatched = matchedMap.has(it.name);
+            return (
+              <View key={it.name} style={styles.ingRow}>
+                <Ionicons
+                  name={isMatched ? "checkmark-circle" : "checkmark-circle-outline"}
+                  size={18}
+                  color={isMatched ? "#22c55e" : "#aaa"}
+                />
+                <Text style={[styles.ingText, isMatched && styles.ingTextMatched]}>
+                  {it.name}
+                </Text>
+                {it.amount ? (
+                  <Text style={styles.ingAmount}>{it.amount}</Text>
+                ) : null}
+                {isMatched && (
+                  <View style={styles.haveTag}>
+                    <Text style={styles.haveTagText}>보유중</Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </View>
 
         {/* 방법 섹션 */}
@@ -100,7 +208,6 @@ export default function RecipeDetailScreen() {
           </>
         ) : null}
       </ScrollView>
-      </>
     );
   };
 
@@ -122,6 +229,22 @@ export default function RecipeDetailScreen() {
         }
       />
       {renderBody()}
+      {showCompleteBtn && (
+        <View style={styles.bottomBar}>
+          <Pressable
+            onPress={handleCompleteRecipe}
+            style={[styles.completeBtn, isCompletingRecipe && styles.completeBtnDisabled]}
+            disabled={isCompletingRecipe}
+          >
+            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+            <Text style={styles.completeBtnText}>
+              {isCompletingRecipe
+                ? "처리 중..."
+                : `요리완료 (재료 소진 ${matchedMap.size}개)`}
+            </Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -167,6 +290,21 @@ const styles = StyleSheet.create({
   h1: { fontSize: 22, fontWeight: "900", color: "#111" },
   createdAt: { fontSize: 12, color: "#666" },
 
+  completedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#22c55e",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  completedBadgeText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 12,
+  },
+
   centerWrap: {
     flex: 1,
     alignItems: "center",
@@ -184,6 +322,12 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#111",
   },
+  matchHint: {
+    fontSize: 12,
+    color: "#22c55e",
+    marginBottom: 6,
+    marginTop: -4,
+  },
   box: {
     borderWidth: 1,
     borderColor: "#ededed",
@@ -194,7 +338,21 @@ const styles = StyleSheet.create({
 
   ingRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   ingText: { flex: 1, fontWeight: "800", color: "#111" },
+  ingTextMatched: { color: "#16a34a" },
   ingAmount: { fontSize: 13, color: "#666" },
+  haveTag: {
+    backgroundColor: "#f0fdf4",
+    borderWidth: 1,
+    borderColor: "#86efac",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  haveTagText: {
+    fontSize: 11,
+    color: "#16a34a",
+    fontWeight: "700",
+  },
 
   stepRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
   stepNum: {
@@ -222,6 +380,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backToListButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+
+  bottomBar: {
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+  },
+  completeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: "#22c55e",
+  },
+  completeBtnDisabled: { opacity: 0.6 },
+  completeBtnText: {
     color: "#fff",
     fontSize: 15,
     fontWeight: "900",

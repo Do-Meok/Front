@@ -1,4 +1,5 @@
 import type { FeaturedRecipe } from "@/components/FeaturedRecipeCarousel";
+import { Ionicons } from "@expo/vector-icons";
 import {
   FlatList,
   Image,
@@ -47,9 +48,17 @@ export default function RecipeLogList({
               </View>
             )}
             <View style={styles.textArea}>
-              <Text style={styles.title} numberOfLines={1}>
-                {item.title}
-              </Text>
+              <View style={styles.titleRow}>
+                <Text style={styles.title} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                {item.isCompleted && (
+                  <View style={styles.completedBadge}>
+                    <Ionicons name="checkmark-circle" size={11} color="#fff" />
+                    <Text style={styles.completedBadgeText}>요리 완료</Text>
+                  </View>
+                )}
+              </View>
               {item.desc ? (
                 <Text style={styles.desc} numberOfLines={1}>
                   {item.desc}
@@ -96,10 +105,30 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 14,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+  },
   title: {
     fontSize: 15,
     fontWeight: "700",
     color: "#111",
+  },
+  completedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "#22c55e",
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  completedBadgeText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 10,
   },
   desc: {
     fontSize: 12,

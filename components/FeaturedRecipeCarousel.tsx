@@ -18,6 +18,8 @@ export type FeaturedRecipe = {
   image?: string | ImageSourcePropType;
   /** 난이도 1~5 (별 표시용, 없으면 표시 안 함) */
   difficulty?: number;
+  /** 요리 완료 여부 */
+  isCompleted?: boolean;
 };
 
 const { width: SCREEN_W } = Dimensions.get("window");
