@@ -26,16 +26,14 @@ export default function FridgeSearchScreen() {
   const currentFridge = fridges[0];
   const currentApiId = currentFridge?.apiId ?? null;
 
-  const {
-    data: refrigerator,
-    isLoading: isLoadingFridge,
-  } = useGetRefrigerator(currentApiId);
+  const { data: refrigerator, isLoading: isLoadingFridge } =
+    useGetRefrigerator(currentApiId);
 
   // 칸을 order_index로 정렬
   const sortedCompartments = useMemo(() => {
     if (!refrigerator?.compartments) return [];
     return [...refrigerator.compartments].sort(
-      (a, b) => a.order_index - b.order_index
+      (a, b) => a.order_index - b.order_index,
     );
   }, [refrigerator]);
 
@@ -84,12 +82,15 @@ export default function FridgeSearchScreen() {
     if (!q) return { matchedCompartmentIds: new Set<number>(), results: [] };
 
     const matchedCompartmentIds = new Set<number>();
-    const results: { compartment: Compartment; ingredients: CompartmentIngredient[] }[] = [];
+    const results: {
+      compartment: Compartment;
+      ingredients: CompartmentIngredient[];
+    }[] = [];
 
     sortedCompartments.forEach((comp) => {
       const ingredients = ingredientsByCompartment.get(comp.id) ?? [];
       const matched = ingredients.filter((ing) =>
-        ing.ingredient_name.toLowerCase().includes(q)
+        ing.ingredient_name.toLowerCase().includes(q),
       );
       if (matched.length > 0) {
         matchedCompartmentIds.add(comp.id);
@@ -139,7 +140,9 @@ export default function FridgeSearchScreen() {
       ) : !refrigerator ? (
         <View style={styles.loadingContainer}>
           <Ionicons name="alert-circle-outline" size={48} color="#ccc" />
-          <Text style={styles.emptyText}>냉장고 정보를 불러올 수 없습니다.</Text>
+          <Text style={styles.emptyText}>
+            냉장고 정보를 불러올 수 없습니다.
+          </Text>
         </View>
       ) : (
         <ScrollView
@@ -204,7 +207,7 @@ export default function FridgeSearchScreen() {
                 <View style={styles.noResult}>
                   <Ionicons name="search-outline" size={36} color="#ddd" />
                   <Text style={styles.noResultText}>
-                    "{query}"에 맞는 식재료를 찾을 수 없습니다.
+                    {`"${query}"에 맞는 식재료를 찾을 수 없습니다.`}
                   </Text>
                 </View>
               ) : (
@@ -217,7 +220,9 @@ export default function FridgeSearchScreen() {
                         color="#22c55e"
                       />
                       <Text style={styles.resultHeaderText}>
-                        {ingredients.map((i) => `"${i.ingredient_name}"`).join(", ")}
+                        {ingredients
+                          .map((i) => `"${i.ingredient_name}"`)
+                          .join(", ")}
                         은(는){" "}
                         <Text style={styles.resultCompartmentName}>
                           {compartment.name}
