@@ -135,17 +135,17 @@ export type ShoppingListResponse = {
   id: number;
   item_name: string;
   status: boolean;
-}
+};
 
 export type ShoppingListRequest = {
   item_name: string;
-}
+};
 
 export type ShoppingUpdateRequest = {
   id: number;
   item_name: string;
   status: boolean;
-}
+};
 
 // 레시피 추천 관련 타입
 /** 보유 식재료 기반 메뉴 추천 (4가지) 응답 항목 */
@@ -174,6 +174,10 @@ export type RecipeDetailResponse = {
 export type CreateRecipeDetailsResponse = RecipeDetailResponse;
 export type SearchRecipesByNameResponse = RecipeDetailResponse;
 export type GetInstantRecommendationsResponse = RecipeDetailResponse;
+
+export type ExtractReceiptResponse = {
+  ingredients: string[];
+};
 
 // 레시피 저장 관련 타입
 export type SaveRecipeRequest = RecipeDetailResponse;

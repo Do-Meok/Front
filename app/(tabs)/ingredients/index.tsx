@@ -1,5 +1,7 @@
 import AddIngredientModal from "@/components/AddIngredientModal";
+import AddMethodModal from "@/components/AddMethodModal";
 import EditIngredientModal from "@/components/EditIngredientModal";
+import ReceiptCameraModal from "@/components/ReceiptCameraModal";
 import IngredientIcon from "@/components/IngredientIcon";
 import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
@@ -26,7 +28,9 @@ type Filter = "전체" | "미분류" | StorageType | "냉장" | "냉동" | "실�
 
 export default function IngredientsScreen() {
   const [filter, setFilter] = useState<Filter>("전체");
+  const [methodModalOpen, setMethodModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedIngredient, setSelectedIngredient] =
     useState<GetIngredientResponse | null>(null);
@@ -207,13 +211,33 @@ export default function IngredientsScreen() {
         onPress={() => {
           setEditModalOpen(false);
           setSelectedIngredient(null);
-          setAddModalOpen(true);
+          setMethodModalOpen(true);
         }}
       >
         <Ionicons name="add" size={28} color="#111" />
       </Pressable>
 
-      {/* 추가 모달 */}
+      {/* 추가 방법 선택 모달 */}
+      <AddMethodModal
+        visible={methodModalOpen}
+        onClose={() => setMethodModalOpen(false)}
+        onSelectReceipt={() => {
+          setMethodModalOpen(false);
+          setReceiptModalOpen(true);
+        }}
+        onSelectManual={() => {
+          setMethodModalOpen(false);
+          setAddModalOpen(true);
+        }}
+      />
+
+      {/* 영수증 촬영 모달 */}
+      <ReceiptCameraModal
+        visible={receiptModalOpen}
+        onClose={() => setReceiptModalOpen(false)}
+      />
+
+      {/* 수동 추가 모달 */}
       <AddIngredientModal
         visible={addModalOpen}
         onClose={() => setAddModalOpen(false)}
