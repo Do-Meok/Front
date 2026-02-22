@@ -1,3 +1,4 @@
+import { updateShoppingList } from "@/api/shopping";
 import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
 import useCreateShopping from "@/hooks/shopping-list/useCreateShopping";
@@ -6,7 +7,14 @@ import useGetShoppingList from "@/hooks/shopping-list/useGetShoppingList";
 import { ShoppingListResponse } from "@/types";
 import { getSecureStore } from "@/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +30,10 @@ export default function ShoppingListScreen() {
   const [inputValue, setInputValue] = useState("");
   const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
   const [hasToken, setHasToken] = useState(false);
+  // 서버와 달라진 항목만 추적: id → 새로운 status
+  const pendingChangesRef = useRef<Map<number, boolean>>(new Map());
+  // useFocusEffect cleanup에서 최신 items 참조용
+  const itemsRef = useRef<ShoppingListResponse[]>([]);
 
   useEffect(() => {
     getSecureStore("accessToken").then((token) => setHasToken(!!token));
@@ -31,13 +43,46 @@ export default function ShoppingListScreen() {
   const createMutation = useCreateShopping();
   const deleteMutation = useDeleteShopping();
 
+  // 서버 데이터 로드 시 completedIds 초기화 (최초 1회)
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (!initialized.current && items.length > 0) {
+      initialized.current = true;
+      setCompletedIds(new Set(items.filter((i) => i.status).map((i) => i.id)));
+    }
+  }, [items]);
+
+  // 항상 최신 items를 ref에 유지
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  // 화면을 떠날 때 변경된 항목만 서버로 flush
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        const changes = pendingChangesRef.current;
+        if (changes.size === 0) return;
+
+        changes.forEach((status, id) => {
+          const item = itemsRef.current.find((i) => i.id === id);
+          if (item) {
+            updateShoppingList(id, { id, item_name: item.item_name, status });
+          }
+        });
+
+        pendingChangesRef.current = new Map();
+      };
+    }, []),
+  );
+
   const toBuyList = useMemo(
     () => items.filter((i) => !completedIds.has(i.id)),
-    [items, completedIds]
+    [items, completedIds],
   );
   const completedList = useMemo(
     () => items.filter((i) => completedIds.has(i.id)),
-    [items, completedIds]
+    [items, completedIds],
   );
 
   const handleAdd = useCallback(() => {
@@ -47,11 +92,20 @@ export default function ShoppingListScreen() {
     setInputValue("");
   }, [inputValue, createMutation]);
 
-  const toggleCompleted = useCallback((id: number) => {
+  const toggleCompleted = useCallback((item: ShoppingListResponse) => {
     setCompletedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const newStatus = !next.has(item.id);
+      if (newStatus) next.add(item.id);
+      else next.delete(item.id);
+
+      // 서버 원본값과 다르면 pending에 기록, 같으면 제거
+      if (newStatus !== item.status) {
+        pendingChangesRef.current.set(item.id, newStatus);
+      } else {
+        pendingChangesRef.current.delete(item.id);
+      }
+
       return next;
     });
   }, []);
@@ -60,51 +114,56 @@ export default function ShoppingListScreen() {
     (item: ShoppingListResponse) => {
       Alert.alert("삭제 확인", `"${item.item_name}"을(를) 삭제하시겠습니까?`, [
         { text: "취소", style: "cancel" },
-        { text: "삭제", style: "destructive", onPress: () => deleteMutation.mutate(item.id) },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: () => {
+            pendingChangesRef.current.delete(item.id);
+            deleteMutation.mutate(item.id);
+          },
+        },
       ]);
     },
-    [deleteMutation]
+    [deleteMutation],
   );
 
   const handleBatchDeleteToBuy = useCallback(() => {
     if (toBuyList.length === 0) return;
-    Alert.alert(
-      "일괄 삭제",
-      "구매 예정 목록을 모두 삭제하시겠습니까?",
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "삭제",
-          style: "destructive",
-          onPress: () => toBuyList.forEach((item) => deleteMutation.mutate(item.id)),
+    Alert.alert("일괄 삭제", "구매 예정 목록을 모두 삭제하시겠습니까?", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: () => {
+          toBuyList.forEach((item) => {
+            pendingChangesRef.current.delete(item.id);
+            deleteMutation.mutate(item.id);
+          });
         },
-      ]
-    );
+      },
+    ]);
   }, [toBuyList, deleteMutation]);
 
   const handleBatchDeleteCompleted = useCallback(() => {
     if (completedList.length === 0) return;
-    Alert.alert(
-      "일괄 삭제",
-      "구매 완료 목록을 모두 삭제하시겠습니까?",
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "삭제",
-          style: "destructive",
-          onPress: () => completedList.forEach((item) => deleteMutation.mutate(item.id)),
+    Alert.alert("일괄 삭제", "구매 완료 목록을 모두 삭제하시겠습니까?", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: () => {
+          completedList.forEach((item) => {
+            pendingChangesRef.current.delete(item.id);
+            deleteMutation.mutate(item.id);
+          });
         },
-      ]
-    );
+      },
+    ]);
   }, [completedList, deleteMutation]);
 
   if (error) {
     return (
-      <QueryErrorView
-        error={error}
-        hasToken={hasToken}
-        onRetry={refetch}
-      />
+      <QueryErrorView error={error} hasToken={hasToken} onRetry={refetch} />
     );
   }
 
@@ -157,7 +216,7 @@ export default function ShoppingListScreen() {
                 key={item.id}
                 item={item}
                 checked={false}
-                onToggle={() => toggleCompleted(item.id)}
+                onToggle={() => toggleCompleted(item)}
                 onDelete={() => handleDelete(item)}
               />
             ))}
@@ -178,7 +237,7 @@ export default function ShoppingListScreen() {
                 key={item.id}
                 item={item}
                 checked
-                onToggle={() => toggleCompleted(item.id)}
+                onToggle={() => toggleCompleted(item)}
                 onDelete={() => handleDelete(item)}
               />
             ))}
@@ -209,7 +268,10 @@ function ShoppingItemRow({
           {checked && <Ionicons name="checkmark" size={16} color="#fff" />}
         </View>
       </Pressable>
-      <Text style={[styles.itemName, checked && styles.itemNameChecked]} numberOfLines={1}>
+      <Text
+        style={[styles.itemName, checked && styles.itemNameChecked]}
+        numberOfLines={1}
+      >
         {item.item_name}
       </Text>
       <Pressable style={styles.deleteBtn} onPress={onDelete} hitSlop={8}>

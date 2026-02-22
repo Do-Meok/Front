@@ -134,10 +134,17 @@ export type BackendGetIngredientResponse = {
 export type ShoppingListResponse = {
   id: number;
   item_name: string;
+  status: boolean;
 }
 
 export type ShoppingListRequest = {
   item_name: string;
+}
+
+export type ShoppingUpdateRequest = {
+  id: number;
+  item_name: string;
+  status: boolean;
 }
 
 // 레시피 추천 관련 타입
