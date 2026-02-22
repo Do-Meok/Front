@@ -1,4 +1,5 @@
-import { default as axiosInstance } from "@/api/axios";
+import axiosInstance from "@/api/axios";
+import { getKakaoAuthUrl } from "@/api/auth";
 import { colors } from "@/constants";
 import { useNavigationContext } from "@/providers/NavigationProvider";
 import { saveSecureStore } from "@/utils/secureStore";
@@ -12,8 +13,6 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 // 인앱 브라우저에서 완료된 OAuth 리다이렉트를 제대로 처리하기 위해 필요
 WebBrowser.maybeCompleteAuthSession();
 
-const KAKAO_LOGIN_URL = `/api/v1/users/kakao`;
-
 // Expo Go에서는 exp:// 스킴, 실제 빌드에서는 domeok:// 스킴 사용
 // ⚠️ Expo Go에서는 domeok:// 딥링크가 작동하지 않으므로 완전한 테스트는 dev build에서 해야 합니다
 const REDIRECT_URL = Linking.createURL("auth/kakao");
@@ -26,13 +25,8 @@ export default function AuthButton() {
     try {
       setIsLoading(true);
 
-      // 1. 서버에서 카카오 인증 URL 받아오기
-      const { data } = await axiosInstance.get<{ auth_url: string }>(KAKAO_LOGIN_URL);
-      const authUrl = data?.auth_url;
-
-      if (!authUrl) {
-        throw new Error("auth_url을 받지 못했습니다.");
-      }
+      // 1. 서버에서 카카오 인증 URL 받아오기 (GET /api/v1/auth/kakao)
+      const authUrl = await getKakaoAuthUrl();
 
       // 2. 인앱 브라우저로 카카오 인증 페이지 열기
       //    openAuthSessionAsync: OAuth 전용 함수로, 딥링크로 돌아오면 자동으로 닫힘

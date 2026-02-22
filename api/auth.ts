@@ -38,5 +38,13 @@ async function refreshToken(): Promise<TokenRefreshResponse> {
   return data;
 }
 
-export { login, logout, refreshToken };
+/** 카카오 OAuth 인증 URL 반환 */
+async function getKakaoAuthUrl(): Promise<string> {
+  const { data } = await axiosInstance.get<{ auth_url: string }>(
+    `${PREFIX}/auth/kakao`,
+  );
+  return data.auth_url;
+}
+
+export { login, logout, refreshToken, getKakaoAuthUrl };
 
