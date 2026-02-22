@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getRefrigerators } from "@/api/refrigerator";
 import type { CompartmentIngredient, Fridge } from "@/types";
 import React, {
   createContext,
@@ -37,36 +38,62 @@ export function FridgeProvider({ children }: { children: React.ReactNode }) {
     Record<number, CompartmentIngredient[]>
   >({});
 
-  // 앱 시작 시 AsyncStorage에서 냉장고 목록 + 칸 배정 복원
+  // 앱 시작 시 냉장고 목록 복원: AsyncStorage 캐시 우선 → 서버 동기화
   useEffect(() => {
-    Promise.all([
-      AsyncStorage.getItem(STORAGE_KEY),
-      AsyncStorage.getItem(ASSIGNMENTS_STORAGE_KEY),
-    ])
-      .then(([rawFridges, rawAssignments]) => {
+    let isMounted = true;
+
+    async function init() {
+      // 1. AsyncStorage 캐시로 빠르게 초기 렌더
+      try {
+        const [rawFridges, rawAssignments] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEY),
+          AsyncStorage.getItem(ASSIGNMENTS_STORAGE_KEY),
+        ]);
+        if (!isMounted) return;
         if (rawFridges) {
-          try {
-            const saved: PersistedFridge[] = JSON.parse(rawFridges);
-            setFridges(
-              saved.map((f) => ({
-                id: String(f.apiId),
-                apiId: f.apiId,
-                name: f.name,
-                cols: f.cols,
-                rows: f.rows,
-                cellIngredients: {},
-              }))
-            );
-          } catch {}
+          const saved: PersistedFridge[] = JSON.parse(rawFridges);
+          setFridges(
+            saved.map((f) => ({
+              id: String(f.apiId),
+              apiId: f.apiId,
+              name: f.name,
+              cols: f.cols,
+              rows: f.rows,
+              cellIngredients: {},
+            }))
+          );
         }
         if (rawAssignments) {
-          try {
-            const saved = JSON.parse(rawAssignments);
-            setLocalAssignments(saved);
-          } catch {}
+          setLocalAssignments(JSON.parse(rawAssignments));
         }
-      })
-      .finally(() => setIsLoaded(true));
+      } catch {}
+
+      if (!isMounted) return;
+      setIsLoaded(true);
+
+      // 2. 서버에서 최신 냉장고 목록 동기화 (다른 기기와 상태 일치)
+      try {
+        const serverFridges = await getRefrigerators();
+        if (!isMounted) return;
+        setFridges(
+          serverFridges.map((f) => ({
+            id: String(f.id),
+            apiId: f.id,
+            name: f.name,
+            cols: f.pos_x,
+            rows: f.pos_y,
+            cellIngredients: {},
+          }))
+        );
+      } catch {
+        // 서버 동기화 실패 시 AsyncStorage 캐시 유지
+      }
+    }
+
+    init();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // fridges 변경 시 AsyncStorage에 저장 (초기 로드 완료 후에만)

@@ -6,6 +6,14 @@ import type {
 } from "@/types";
 import axiosInstance, { PREFIX } from "./axios";
 
+// 냉장고 목록 조회
+async function getRefrigerators(): Promise<RefrigeratorAddResponse[]> {
+  const { data } = await axiosInstance.get<RefrigeratorAddResponse[]>(
+    `${PREFIX}/refrigerator`,
+  );
+  return data;
+}
+
 // 냉장고 추가
 async function addRefrigerator(
   body: RefrigeratorAddRequest,
@@ -48,5 +56,5 @@ async function assignIngredientToCompartment(
   );
 }
 
-export { addRefrigerator, assignIngredientToCompartment, getCompartmentIngredients, getRefrigerator };
+export { addRefrigerator, assignIngredientToCompartment, getCompartmentIngredients, getRefrigerator, getRefrigerators };
 
