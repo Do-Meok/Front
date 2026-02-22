@@ -212,6 +212,16 @@ export type CompartmentIngredient = {
   is_auto_fillable: boolean;
 };
 
+// 자동 입력 응답
+export type AutoFillIngredientResponse = {
+  id: number;
+  ingredient_name: string;
+  purchase_date: string;
+  expiration_date: string;
+  storage_type: StorageType;
+  is_auto_fillable: boolean;
+};
+
 // 냉장고 추가 요청
 export type RefrigeratorAddRequest = {
   name: string;

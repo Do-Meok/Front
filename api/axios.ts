@@ -6,11 +6,20 @@ import { API_URL, PREFIX } from "./config";
 
 export { API_URL, PREFIX };
 
+/**
+ * 토큰 만료로 강제 로그아웃될 때 호출할 콜백.
+ * NavigationProvider에서 등록하여 hasToken 상태를 동기화한다.
+ */
+let onAuthFailure: (() => void) | null = null;
+export function setAuthFailureCallback(cb: () => void) {
+  onAuthFailure = cb;
+}
+
 const axiosInstance = axios.create({
   baseURL: API_URL,
 });
 
-// 요청 인터셉터: 모든 요청에 토큰 추가
+// 요청 인터셉터: 모든 요청에 SecureStore의 최신 토큰 추가
 axiosInstance.interceptors.request.use(
   async (config) => {
     const token = await getSecureStore("accessToken");
@@ -19,12 +28,10 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// 응답 인터셉터: 401/토큰 만료 시 갱신 시도 → 실패 시 로그아웃 후 로그인 화면으로
+// 응답 인터셉터: 401/403/토큰 만료 시 갱신 시도 → 실패 시 로그아웃 후 로그인 화면으로
 let isRefreshing = false;
 let failedQueue: {
   resolve: (value: string | null) => void;
@@ -36,13 +43,24 @@ function processQueue(error: unknown, token: string | null = null) {
   failedQueue = [];
 }
 
+async function forceLogout() {
+  await clearStoredTokens();
+  delete axiosInstance.defaults.headers.common["Authorization"];
+  // NavigationProvider 상태 동기화 (hasToken → false)
+  onAuthFailure?.();
+  router.replace("/auth");
+}
+
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
+
+    // 401: 인증 실패, 403: 접근 거부(서버가 만료된 토큰에 403 반환), 500: 토큰 관련 서버 오류
     const isTokenError =
       status === 401 ||
+      status === 403 ||
       (status === 500 &&
         /토큰|token|expired|만료/i.test(
           String(error.response?.data?.message ?? error.response?.data?.detail ?? "")
@@ -52,17 +70,15 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 리프레시 토큰이 없으면 갱신 불가 → 토큰 삭제 후 로그인 화면으로
+    // 리프레시 토큰이 없으면 갱신 불가 → 강제 로그아웃
     const hasRefreshToken = await getSecureStore("refreshToken");
     if (!hasRefreshToken) {
-      await clearStoredTokens();
-      delete axiosInstance.defaults.headers.common["Authorization"];
-      router.replace("/auth");
+      await forceLogout();
       return Promise.reject(error);
     }
 
     if (isRefreshing) {
-      // 이미 갱신 중이면 대기 후 새 토큰으로 재요청
+      // 이미 갱신 중이면 완료될 때까지 대기 후 새 토큰으로 재요청
       return new Promise<string | null>((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       })
@@ -89,19 +105,10 @@ axiosInstance.interceptors.response.use(
       return axiosInstance(originalRequest);
     }
 
-    await clearStoredTokens();
-    delete axiosInstance.defaults.headers.common["Authorization"];
-    router.replace("/auth");
+    // 리프레시도 실패 → 강제 로그아웃
+    await forceLogout();
     return Promise.reject(error);
   }
 );
-
-// 앱 시작 시 저장된 토큰 불러오기
-(async () => {
-  const token = await getSecureStore("accessToken");
-  if (token) {
-    axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  }
-})();
 
 export default axiosInstance;

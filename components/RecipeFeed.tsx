@@ -1,32 +1,33 @@
 import EmptyIngredientsBanner from "@/components/EmptyIngredientsBanner";
 import FeaturedRecipeCarousel, {
-    type FeaturedRecipe,
+  type FeaturedRecipe,
 } from "@/components/FeaturedRecipeCarousel";
-import RecipeLogList from "@/components/RecipeLogList";
 import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
 import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
+import RecipeLogList from "@/components/RecipeLogList";
 import { colors } from "@/constants";
 import useCreateRecipeDetails from "@/hooks/assistant/useCreateRecipeDetails";
 import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendationsRecipes";
 import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
-import type { RecipeRecommendationItem } from "@/types";
+import type { CreateRecipeDetailsResponse, RecipeRecommendationItem } from "@/types";
 import { getCompletedRecipeIds } from "@/utils/completedRecipes";
 import { getSecureStore } from "@/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "expo-router";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 export type Recipe = {
@@ -72,13 +73,15 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
   const [q, setQ] = useState("");
   const [hasToken, setHasToken] = useState(false);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [pendingRecipe, setPendingRecipe] =
+    useState<CreateRecipeDetailsResponse | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       if (mode === "log") {
         getCompletedRecipeIds().then(setCompletedIds);
       }
-    }, [mode])
+    }, [mode]),
   );
 
   const {
@@ -89,7 +92,8 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
     isRefetching: isRecommendRefetching,
   } = useGetRecommendationsRecipes();
 
-  const { data: ingredients = [], isLoading: isIngredientsLoading } = useGetIngredients();
+  const { data: ingredients = [], isLoading: isIngredientsLoading } =
+    useGetIngredients();
 
   const createRecipeDetailsMutation = useCreateRecipeDetails();
   const saveRecipeMutation = useSaveRecipe();
@@ -134,6 +138,18 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
       return;
     }
 
+    if (mode === "recommend") {
+      // 추천 모드: 레시피 상세를 생성한 뒤 미리보기 모달로 보여주고
+      // 사용자가 "저장하기"를 눌러야 요리기록에 저장됨
+      createRecipeDetailsMutation.mutate(payload, {
+        onSuccess: (detail) => {
+          setPendingRecipe(detail);
+        },
+      });
+      return;
+    }
+
+    // list 모드: 기존 동작 유지 (생성 후 바로 저장)
     createRecipeDetailsMutation.mutate(payload, {
       onSuccess: (detail) => {
         saveRecipeMutation.mutate(detail, {
@@ -141,6 +157,16 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
             router.push(`/recipes/${saved.id}`);
           },
         });
+      },
+    });
+  };
+
+  const handleSavePendingRecipe = () => {
+    if (!pendingRecipe) return;
+    saveRecipeMutation.mutate(pendingRecipe, {
+      onSuccess: (saved) => {
+        setPendingRecipe(null);
+        router.push(`/recipes/${saved.id}`);
       },
     });
   };
@@ -186,6 +212,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
       title: r.title,
       desc: r.desc,
       ...(r.image !== undefined && { image: r.image }),
+      ...("isCompleted" in r && { isCompleted: r.isCompleted as boolean | undefined }),
     }));
   }, [list]);
 
@@ -208,13 +235,94 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
         ? "요리 기록"
         : "레시피";
 
+  // 추천 모드에서는 saveRecipeMutation은 미리보기 모달에서 처리하므로 제외
   const isRecipeLoading =
-    createRecipeDetailsMutation.isPending || saveRecipeMutation.isPending;
+    createRecipeDetailsMutation.isPending ||
+    (mode !== "recommend" && saveRecipeMutation.isPending);
 
   const loadingModal = (
     <Modal visible={isRecipeLoading} transparent animationType="fade">
       <View style={styles.loadingModal}>
         <RecipeLoadingScreen message="레시피를 받아오는 중입니다." />
+      </View>
+    </Modal>
+  );
+
+  // 추천 레시피 미리보기 모달 (저장 전 확인용)
+  const previewModal = (
+    <Modal
+      visible={!!pendingRecipe}
+      animationType="slide"
+      onRequestClose={() => setPendingRecipe(null)}
+    >
+      <View style={styles.previewModal}>
+        <View style={styles.previewHeader}>
+          <Text style={styles.previewTitle} numberOfLines={1}>
+            {pendingRecipe?.food}
+          </Text>
+          <Pressable
+            onPress={() => setPendingRecipe(null)}
+            style={styles.previewCloseBtn}
+          >
+            <Ionicons name="close" size={22} color="#111" />
+          </Pressable>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.previewBody}>
+          <Text style={styles.previewSectionTitle}>사용할 식재료</Text>
+          <View style={styles.previewBox}>
+            {pendingRecipe?.use_ingredients.map((it) => (
+              <View key={it.name} style={styles.previewIngRow}>
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={16}
+                  color="#aaa"
+                />
+                <Text style={styles.previewIngName}>{it.name}</Text>
+                {it.amount ? (
+                  <Text style={styles.previewIngAmount}>{it.amount}</Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.previewSectionTitle}>요리 방법</Text>
+          <View style={styles.previewBox}>
+            {pendingRecipe?.steps.map((s, idx) => (
+              <View key={idx} style={styles.previewStepRow}>
+                <View style={styles.previewStepNum}>
+                  <Text style={styles.previewStepNumText}>{idx + 1}</Text>
+                </View>
+                <Text style={styles.previewStepText}>{s}</Text>
+              </View>
+            ))}
+          </View>
+
+          {pendingRecipe?.tip ? (
+            <>
+              <Text style={styles.previewSectionTitle}>팁</Text>
+              <View style={styles.previewBox}>
+                <Text style={styles.previewTipText}>{pendingRecipe.tip}</Text>
+              </View>
+            </>
+          ) : null}
+        </ScrollView>
+
+        <View style={styles.previewBottomBar}>
+          <Pressable
+            style={[
+              styles.previewSaveBtn,
+              saveRecipeMutation.isPending && styles.previewSaveBtnDisabled,
+            ]}
+            onPress={handleSavePendingRecipe}
+            disabled={saveRecipeMutation.isPending}
+          >
+            <Ionicons name="bookmark-outline" size={18} color="#fff" />
+            <Text style={styles.previewSaveBtnText}>
+              {saveRecipeMutation.isPending ? "저장 중..." : "요리기록에 저장하기"}
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </Modal>
   );
@@ -226,7 +334,9 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
           <PageHeader title={title} />
           <EmptyIngredientsBanner
             title="재료를 추가해볼까요?"
-            description={"냉장고 재료를 등록하면\nAI 맞춤 레시피를 추천받을 수 있어요."}
+            description={
+              "냉장고 재료를 등록하면\nAI 맞춤 레시피를 추천받을 수 있어요."
+            }
           />
         </View>
       );
@@ -261,9 +371,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
           <View style={styles.emptyWrap}>
             <Ionicons name="restaurant-outline" size={28} color="#999" />
             <Text style={styles.emptyTitle}>추천할 메뉴가 없어요</Text>
-            <Text style={styles.emptyDesc}>
-              잠시 후 다시 시도해보세요.
-            </Text>
+            <Text style={styles.emptyDesc}>잠시 후 다시 시도해보세요.</Text>
           </View>
         ) : (
           <View style={styles.recommendContent}>
@@ -291,6 +399,7 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
           </View>
         )}
         {loadingModal}
+        {previewModal}
       </View>
     );
   }
@@ -333,13 +442,17 @@ export default function RecipeFeed({ mode }: { mode: Mode }) {
                 <View style={styles.emptyWrap}>
                   <Ionicons name="calendar-outline" size={28} color="#999" />
                   <Text style={styles.emptyTitle}>요리 기록이 비어있어요</Text>
-                  <Text style={styles.emptyDesc}>레시피 상세에서 요리 기록에 추가하기를 눌러보세요.</Text>
+                  <Text style={styles.emptyDesc}>
+                    레시피 상세에서 요리 기록에 추가하기를 눌러보세요.
+                  </Text>
                 </View>
               ) : (
                 <View style={styles.emptyWrap}>
                   <Ionicons name="search-outline" size={28} color="#999" />
                   <Text style={styles.emptyTitle}>검색 결과가 없어요</Text>
-                  <Text style={styles.emptyDesc}>다른 키워드로 검색해보세요.</Text>
+                  <Text style={styles.emptyDesc}>
+                    다른 키워드로 검색해보세요.
+                  </Text>
                 </View>
               )
             ) : (
@@ -448,5 +561,94 @@ const styles = StyleSheet.create({
   loadingModal: {
     flex: 1,
     backgroundColor: colors.WHITE,
+  },
+
+  // 미리보기 모달
+  previewModal: {
+    flex: 1,
+    backgroundColor: "#fff",
+    paddingTop: 50,
+  },
+  previewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ededed",
+  },
+  previewTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#111",
+    flex: 1,
+    marginRight: 8,
+  },
+  previewCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#ededed",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  previewBody: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  previewSectionTitle: {
+    marginTop: 14,
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#111",
+  },
+  previewBox: {
+    borderWidth: 1,
+    borderColor: "#ededed",
+    borderRadius: 16,
+    padding: 12,
+    gap: 10,
+  },
+  previewIngRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  previewIngName: { flex: 1, fontWeight: "800", color: "#111" },
+  previewIngAmount: { fontSize: 13, color: "#666" },
+  previewStepRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+  previewStepNum: {
+    width: 26,
+    height: 26,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#ededed",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+  previewStepNumText: { fontWeight: "900", color: "#111", fontSize: 12 },
+  previewStepText: { flex: 1, color: "#333", fontWeight: "700", lineHeight: 18 },
+  previewTipText: { color: "#333", fontWeight: "600", lineHeight: 20 },
+  previewBottomBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+  },
+  previewSaveBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: "#111",
+  },
+  previewSaveBtnDisabled: { opacity: 0.6 },
+  previewSaveBtnText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "900",
   },
 });

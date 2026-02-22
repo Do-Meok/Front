@@ -1,6 +1,7 @@
 import {
   AddIngredientRequest,
   AddIngredientResponse,
+  AutoFillIngredientResponse,
   BackendAddIngredientResponse,
   BackendGetIngredientResponse,
   GetIngredientResponse,
@@ -83,7 +84,17 @@ async function getIngredient(
 }
 
 
+// 식재료 자동 입력 정보 조회
+async function autoFillIngredient(
+  ingredientId: number
+): Promise<AutoFillIngredientResponse> {
+  const { data } = await axiosInstance.get<AutoFillIngredientResponse>(
+    `${PREFIX}/ingredients/${ingredientId}/auto`
+  );
+  return data;
+}
+
 export {
-  addIngredient, deleteIngredient, getIngredient, getIngredients, setIngredientDetails, updateIngredient
+  addIngredient, autoFillIngredient, deleteIngredient, getIngredient, getIngredients, setIngredientDetails, updateIngredient
 };
 

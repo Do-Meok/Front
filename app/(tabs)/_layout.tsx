@@ -1,10 +1,12 @@
 import SketchTabBar from "@/components/SketchTabar";
+import { FridgeProvider } from "@/providers/FridgeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
 
 export default function TabLayout() {
   return (
+    <FridgeProvider>
     <Tabs
       tabBar={(props) => <SketchTabBar {...props} />}
       screenOptions={{
@@ -72,5 +74,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </FridgeProvider>
   );
 }

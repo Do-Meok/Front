@@ -1,5 +1,5 @@
 import { refreshAccessToken } from "@/api/authRefresh";
-import axiosInstance from "@/api/axios";
+import axiosInstance, { setAuthFailureCallback } from "@/api/axios";
 import { consumeGuestChosen } from "@/utils/guestMode";
 import { getSecureStore } from "@/utils/secureStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -81,6 +81,13 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     // 앱 시작 시 인증 상태 확인
     checkAuthState();
   }, [checkAuthState]);
+
+  // axios 인터셉터가 강제 로그아웃할 때 NavigationProvider 상태를 동기화
+  useEffect(() => {
+    setAuthFailureCallback(() => {
+      setHasTokenState(false);
+    });
+  }, []);
 
   // 초기 라우팅 및 네비게이션 가드
   useEffect(() => {

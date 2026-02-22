@@ -25,6 +25,7 @@ type FridgeContextType = {
   setFridges: React.Dispatch<React.SetStateAction<Fridge[]>>;
   localAssignments: Record<number, CompartmentIngredient[]>;
   addLocalAssignment: (compartmentId: number, item: CompartmentIngredient) => void;
+  removeLocalIngredient: (ingredientId: number) => void;
 };
 
 const FridgeContext = createContext<FridgeContextType | undefined>(undefined);
@@ -109,6 +110,19 @@ export function FridgeProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const removeLocalIngredient = useCallback((ingredientId: number) => {
+    setLocalAssignments((prev) => {
+      const next: Record<number, CompartmentIngredient[]> = {};
+      for (const key in prev) {
+        const filtered = prev[key].filter((i) => i.id !== ingredientId);
+        if (filtered.length > 0) {
+          next[key] = filtered;
+        }
+      }
+      return next;
+    });
+  }, []);
+
   return (
     <FridgeContext.Provider
       value={{
@@ -118,6 +132,7 @@ export function FridgeProvider({ children }: { children: React.ReactNode }) {
         setFridges,
         localAssignments,
         addLocalAssignment,
+        removeLocalIngredient,
       }}
     >
       {children}

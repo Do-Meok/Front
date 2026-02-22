@@ -7,6 +7,7 @@ import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import type { GetIngredientResponse, SaveRecipeResponse } from "@/types";
 import { getCompletedRecipeIds, markRecipeCompleted } from "@/utils/completedRecipes";
+import { useFridgeContext } from "@/providers/FridgeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
@@ -33,6 +34,7 @@ export default function RecipeDetailScreen() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data: recipes, isLoading, error } = useGetRecipes();
   const { data: ingredients = [] } = useGetIngredients();
+  const { removeLocalIngredient } = useFridgeContext();
 
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoadingCompleted, setIsLoadingCompleted] = useState(true);
@@ -90,10 +92,14 @@ export default function RecipeDetailScreen() {
           onPress: async () => {
             setIsCompletingRecipe(true);
             try {
+              const deletedIngredients = [...matchedMap.values()];
               await Promise.all(
-                [...matchedMap.values()].map((ing) => deleteIngredient(ing.id))
+                deletedIngredients.map((ing) => deleteIngredient(ing.id))
               );
+              deletedIngredients.forEach((ing) => removeLocalIngredient(ing.id));
               queryClient.invalidateQueries({ queryKey: [queryKey.INGREDIENTS] });
+              queryClient.invalidateQueries({ queryKey: [queryKey.REFRIGERATOR] });
+              queryClient.invalidateQueries({ queryKey: [queryKey.COMPARTMENT_INGREDIENTS] });
               await markRecipeCompleted(String(detail.id));
               setIsCompleted(true);
             } catch {
@@ -166,19 +172,28 @@ export default function RecipeDetailScreen() {
             return (
               <View key={it.name} style={styles.ingRow}>
                 <Ionicons
-                  name={isMatched ? "checkmark-circle" : "checkmark-circle-outline"}
+                  name={isMatched && isCompleted ? "remove-circle" : isMatched ? "checkmark-circle" : "checkmark-circle-outline"}
                   size={18}
-                  color={isMatched ? "#22c55e" : "#aaa"}
+                  color={isMatched && isCompleted ? "#aaa" : isMatched ? "#22c55e" : "#aaa"}
                 />
-                <Text style={[styles.ingText, isMatched && styles.ingTextMatched]}>
+                <Text style={[
+                  styles.ingText,
+                  isMatched && !isCompleted && styles.ingTextMatched,
+                  isMatched && isCompleted && styles.ingTextConsumed,
+                ]}>
                   {it.name}
                 </Text>
                 {it.amount ? (
-                  <Text style={styles.ingAmount}>{it.amount}</Text>
+                  <Text style={[styles.ingAmount, isMatched && isCompleted && styles.ingAmountConsumed]}>{it.amount}</Text>
                 ) : null}
-                {isMatched && (
+                {isMatched && !isCompleted && (
                   <View style={styles.haveTag}>
                     <Text style={styles.haveTagText}>보유중</Text>
+                  </View>
+                )}
+                {isMatched && isCompleted && (
+                  <View style={styles.usedTag}>
+                    <Text style={styles.usedTagText}>소진됨</Text>
                   </View>
                 )}
               </View>
@@ -351,6 +366,28 @@ const styles = StyleSheet.create({
   haveTagText: {
     fontSize: 11,
     color: "#16a34a",
+    fontWeight: "700",
+  },
+
+  ingTextConsumed: {
+    textDecorationLine: "line-through",
+    color: "#aaa",
+  },
+  ingAmountConsumed: {
+    textDecorationLine: "line-through",
+    color: "#bbb",
+  },
+  usedTag: {
+    backgroundColor: "#f5f5f5",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  usedTagText: {
+    fontSize: 11,
+    color: "#888",
     fontWeight: "700",
   },
 
