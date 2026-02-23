@@ -84,11 +84,11 @@ async function getIngredient(
 }
 
 
-// 식재료 자동 입력 정보 조회
+// 식재료 유통기한/보관방법 자동 입력
 async function autoFillIngredient(
   ingredientId: number
 ): Promise<AutoFillIngredientResponse> {
-  const { data } = await axiosInstance.post<AutoFillIngredientResponse>(
+  const { data } = await axiosInstance.patch<AutoFillIngredientResponse>(
     `${PREFIX}/ingredients/${ingredientId}/auto`
   );
   return data;

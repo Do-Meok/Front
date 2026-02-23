@@ -64,6 +64,19 @@ export default function IngredientsManagePage() {
 
   const updateMutation = useUpdateIngredient({ showAlert: false });
 
+  /* ─── 전체 선택 ─── */
+  const isAllSelected =
+    unclassifiedItems.length > 0 &&
+    checkedIds.size === unclassifiedItems.length;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setCheckedIds(new Set());
+    } else {
+      setCheckedIds(new Set(unclassifiedItems.map((item) => item.id)));
+    }
+  };
+
   /* ─── 체크박스 ─── */
   const toggleCheck = (id: number) => {
     setCheckedIds((prev) => {
@@ -83,7 +96,7 @@ export default function IngredientsManagePage() {
     try {
       const autoData = await autoFillIngredient(item.id);
       if (!autoData.is_auto_fillable) {
-        Alert.alert("알림", "자동 입력이 불가능한 재료입니다.");
+        Alert.alert("알림", "자동 입력이 불가능한 재료입니다.\n수동으로 기입해주세요.");
         return;
       }
       await updateIngredient(item.id, {
@@ -92,9 +105,13 @@ export default function IngredientsManagePage() {
       });
       queryClient.invalidateQueries({ queryKey: [queryKey.INGREDIENTS] });
     } catch (e: any) {
-      const msg =
-        e?.message || e?.response?.data?.detail || "자동 입력에 실패했습니다.";
-      Alert.alert("오류", msg);
+      const status = e?.response?.status;
+      if (status === 404) {
+        Alert.alert("알림", "자동 입력이 불가능한 재료입니다.\n수동으로 기입해주세요.");
+      } else {
+        const msg = e?.response?.data?.detail || "자동 입력에 실패했습니다.";
+        Alert.alert("오류", msg);
+      }
     } finally {
       setLoadingIds((prev) => {
         const next = new Set(prev);
@@ -134,7 +151,7 @@ export default function IngredientsManagePage() {
 
     const msg =
       failCount > 0
-        ? `${successCount}개 완료, ${failCount}개 자동 입력 불가`
+        ? `${successCount}개 완료, ${failCount}개는 자동 입력이 불가능합니다.\n수동으로 기입해주세요.`
         : `${successCount}개 자동 입력 완료`;
     Alert.alert("완료", msg);
   };
@@ -173,23 +190,33 @@ export default function IngredientsManagePage() {
     <View style={styles.page}>
       <PageHeader title="재료 관리" />
 
-      {/* 일괄 자동 입력 버튼 */}
-      <Pressable
-        style={[
-          styles.batchBtn,
-          (checkedIds.size === 0 || batchLoading) && styles.batchBtnDisabled,
-        ]}
-        onPress={handleBatchAutoFill}
-        disabled={checkedIds.size === 0 || batchLoading}
-      >
-        {batchLoading ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <Text style={styles.batchBtnText}>
-            일괄 자동 입력 ({checkedIds.size})
-          </Text>
-        )}
-      </Pressable>
+      {/* 일괄 자동 입력 버튼 + 전체 선택 */}
+      <View style={styles.batchRow}>
+        <Pressable
+          style={[
+            styles.batchBtn,
+            (checkedIds.size === 0 || batchLoading) && styles.batchBtnDisabled,
+          ]}
+          onPress={handleBatchAutoFill}
+          disabled={checkedIds.size === 0 || batchLoading}
+        >
+          {batchLoading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.batchBtnText}>
+              일괄 자동 입력 ({checkedIds.size})
+            </Text>
+          )}
+        </Pressable>
+        <Pressable style={styles.selectAllBtn} onPress={handleSelectAll}>
+          <Ionicons
+            name={isAllSelected ? "checkbox" : "square-outline"}
+            size={13}
+            color="#888"
+          />
+          <Text style={styles.selectAllText}>전체 선택</Text>
+        </Pressable>
+      </View>
 
       {/* 리스트 */}
       {isLoading ? (
@@ -392,17 +419,30 @@ export default function IngredientsManagePage() {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: "#fff", padding: 16 },
 
-  /* 일괄 버튼 */
-  batchBtn: {
+  /* 일괄 버튼 영역 */
+  batchRow: {
     marginTop: 12,
+    marginBottom: 14,
+  },
+  batchBtn: {
     backgroundColor: colors.BLACK,
     paddingVertical: 13,
     borderRadius: 14,
     alignItems: "center",
-    marginBottom: 14,
   },
   batchBtnDisabled: { opacity: 0.35 },
   batchBtnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+
+  /* 전체 선택 */
+  selectAllBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 3,
+    marginTop: 6,
+    paddingHorizontal: 2,
+  },
+  selectAllText: { color: "#888", fontSize: 11, fontWeight: "600" },
 
   /* 공통 */
   center: { flex: 1, justifyContent: "center", alignItems: "center" },

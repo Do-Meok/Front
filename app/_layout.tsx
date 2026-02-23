@@ -20,10 +20,6 @@ export default function RootLayout() {
           <Stack.Screen name="(onboarding)" />
           <Stack.Screen name="auth" />
           <Stack.Screen name="mypage" />
-          <Stack.Screen
-            name="modal"
-            options={{ presentation: "modal", headerShown: true, title: "Modal" }}
-          />
         </Stack>
         <StatusBar style="auto" />
       </NavigationProvider>

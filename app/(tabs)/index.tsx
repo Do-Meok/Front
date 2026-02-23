@@ -37,7 +37,8 @@ export default function HomeScreen() {
   } = useGetRecommendationsRecipes();
 
   const { data: savedRecipes } = useGetRecipes();
-  const { data: ingredients = [], isLoading: isIngredientsLoading } = useGetIngredients();
+  const { data: ingredients = [], isLoading: isIngredientsLoading } =
+    useGetIngredients();
   const createRecipeDetailsMutation = useCreateRecipeDetails();
   const saveRecipeMutation = useSaveRecipe();
 
@@ -45,8 +46,10 @@ export default function HomeScreen() {
   const expiringItems = useMemo(() => {
     return ingredients
       .filter((item: GetIngredientResponse) => item.expiration_date)
-      .sort((a: GetIngredientResponse, b: GetIngredientResponse) =>
-        new Date(a.expiration_date!).getTime() - new Date(b.expiration_date!).getTime()
+      .sort(
+        (a: GetIngredientResponse, b: GetIngredientResponse) =>
+          new Date(a.expiration_date!).getTime() -
+          new Date(b.expiration_date!).getTime(),
       )
       .slice(0, 5)
       .map((item: GetIngredientResponse) => ({
@@ -101,14 +104,15 @@ export default function HomeScreen() {
   const isRecipeLoading =
     createRecipeDetailsMutation.isPending || saveRecipeMutation.isPending;
 
-  const isInitialLoading = (isRecommendLoading && !recommendationsData) || isIngredientsLoading;
+  const isInitialLoading =
+    (isRecommendLoading && !recommendationsData) || isIngredientsLoading;
 
   const hasIngredients = ingredients.length > 0;
   const hasRecommendations = featuredItems.length > 0;
   const isRecommendDone = !isRecommendLoading || !!recommendationsData;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <HomeHeader
         onPressBell={() => {}}
         onPressProfile={() => router.push("/mypage")}
@@ -126,7 +130,9 @@ export default function HomeScreen() {
           </View>
         ) : recommendError && !recommendationsData ? (
           <View style={styles.recommendLoading}>
-            <Text style={styles.recommendLoadingText}>추천을 불러올 수 없어요</Text>
+            <Text style={styles.recommendLoadingText}>
+              추천을 불러올 수 없어요
+            </Text>
           </View>
         ) : hasRecommendations ? (
           <FeaturedRecipeCarousel
@@ -143,30 +149,32 @@ export default function HomeScreen() {
         )}
 
         {/* 재료는 있는데 추천이 아직 없을 때 → AI 추천 유도 */}
-        {!isInitialLoading && isRecommendDone && hasIngredients && !hasRecommendations && (
-          <Pressable
-            style={styles.aiCtaCard}
-            onPress={() => router.push("/(tabs)/recipes/recommend" as any)}
-          >
-            <View style={styles.aiCtaIconBox}>
-              <Ionicons name="sparkles" size={28} color="#f59e0b" />
-            </View>
-            <View style={styles.aiCtaTextBox}>
-              <Text style={styles.aiCtaTitle}>AI를 통해 추천받아보시겠어요?</Text>
-              <Text style={styles.aiCtaDesc}>
-                보유 재료 기반으로 맞춤 레시피를 추천해드려요.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#bbb" />
-          </Pressable>
-        )}
+        {!isInitialLoading &&
+          isRecommendDone &&
+          hasIngredients &&
+          !hasRecommendations && (
+            <Pressable
+              style={styles.aiCtaCard}
+              onPress={() => router.push("/(tabs)/recipes/recommend" as any)}
+            >
+              <View style={styles.aiCtaIconBox}>
+                <Ionicons name="sparkles" size={28} color="#f59e0b" />
+              </View>
+              <View style={styles.aiCtaTextBox}>
+                <Text style={styles.aiCtaTitle}>
+                  AI를 통해 추천받아보시겠어요?
+                </Text>
+                <Text style={styles.aiCtaDesc}>
+                  보유 재료 기반으로 맞춤 레시피를 추천해드려요.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#bbb" />
+            </Pressable>
+          )}
 
         {/* 유통기한 마감 */}
         {expiringItems.length > 0 && (
-          <ExpiringCarousel
-            items={expiringItems}
-            onPressItem={() => {}}
-          />
+          <ExpiringCarousel items={expiringItems} onPressItem={() => {}} />
         )}
       </ScrollView>
 

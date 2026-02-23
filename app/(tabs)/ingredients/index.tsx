@@ -37,13 +37,9 @@ export default function IngredientsScreen() {
   const [hasToken, setHasToken] = useState(false);
 
   useEffect(() => {
-    // 토큰 존재 여부 확인
-    getSecureStore("accessToken").then((token) => {
-      setHasToken(!!token);
-    });
+    getSecureStore("accessToken").then((token) => setHasToken(!!token));
   }, []);
 
-  // 식재료 목록 조회
   const {
     data: items = [],
     isLoading,
@@ -51,26 +47,18 @@ export default function IngredientsScreen() {
     refetch,
   } = useGetIngredients();
 
-  // 식재료 삭제
   const deleteMutation = useDeleteIngredient();
 
-  // 필터링 및 유통기한 순으로 정렬
   const sortedItems = useMemo(() => {
-    // 필터에 따라 데이터 필터링
     let filtered = [...items];
-
     if (filter === "미분류") {
-      // storage_type이 null인 경우
       filtered = filtered.filter((item) => !item.storage_type);
     } else if (filter !== "전체") {
-      // 한국어 필터를 StorageType으로 변환
       const storageType = fromKoreanStorageType(filter);
       if (storageType) {
         filtered = filtered.filter((item) => item.storage_type === storageType);
       }
     }
-
-    // 유통기한 순으로 정렬
     return filtered.sort((a, b) => {
       if (!a.expiration_date && !b.expiration_date) return 0;
       if (!a.expiration_date) return 1;
@@ -101,17 +89,12 @@ export default function IngredientsScreen() {
 
   if (error) {
     return (
-      <QueryErrorView
-        error={error}
-        hasToken={hasToken}
-        onRetry={refetch}
-      />
+      <QueryErrorView error={error} hasToken={hasToken} onRetry={refetch} />
     );
   }
 
   return (
     <View style={styles.page}>
-      {/* 상단 제목 */}
       <PageHeader title="재료" />
 
       {/* 필터 탭 */}
@@ -149,11 +132,8 @@ export default function IngredientsScreen() {
           contentContainerStyle={{ paddingBottom: 10 }}
           renderItem={({ item }) => {
             const d = daysLeft(item.expiration_date);
-            const dText = d !== null
-              ? d >= 0
-                ? `D-${d}`
-                : `D+${Math.abs(d)}`
-              : "미설정";
+            const dText =
+              d !== null ? (d >= 0 ? `D-${d}` : `D+${Math.abs(d)}`) : "미설정";
             const storageText = toKoreanStorageType(item.storage_type);
 
             return (
@@ -168,7 +148,8 @@ export default function IngredientsScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.cardTitle}>
-                      {item.ingredient_name}, <Text style={styles.dday}>{dText}</Text>{" "}
+                      {item.ingredient_name},{" "}
+                      <Text style={styles.dday}>{dText}</Text>{" "}
                       <Text style={styles.storage}>({storageText})</Text>
                     </Text>
                     {item.expiration_date && (
@@ -205,7 +186,7 @@ export default function IngredientsScreen() {
         />
       )}
 
-      {/* + 버튼 */}
+      {/* + FAB */}
       <Pressable
         style={styles.fab}
         onPress={() => {
@@ -217,7 +198,6 @@ export default function IngredientsScreen() {
         <Ionicons name="add" size={28} color="#111" />
       </Pressable>
 
-      {/* 추가 방법 선택 모달 */}
       <AddMethodModal
         visible={methodModalOpen}
         onClose={() => setMethodModalOpen(false)}
@@ -230,20 +210,14 @@ export default function IngredientsScreen() {
           setAddModalOpen(true);
         }}
       />
-
-      {/* 영수증 촬영 모달 */}
       <ReceiptCameraModal
         visible={receiptModalOpen}
         onClose={() => setReceiptModalOpen(false)}
       />
-
-      {/* 수동 추가 모달 */}
       <AddIngredientModal
         visible={addModalOpen}
         onClose={() => setAddModalOpen(false)}
       />
-
-      {/* 수정 모달 */}
       <EditIngredientModal
         visible={editModalOpen}
         ingredient={selectedIngredient}
@@ -265,7 +239,6 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
 
-
   filterRow: { flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" },
   filterPill: {
     paddingVertical: 8,
@@ -279,7 +252,7 @@ const styles = StyleSheet.create({
   filterText: { fontSize: 12, fontWeight: "700", color: "#666" },
   filterTextActive: { color: "#111" },
 
-  listTitle: { marginTop: 12, marginBottom: 10, color: "#777", fontSize: 12 },
+  listTitle: { color: "#777", fontSize: 12, marginTop: 12, marginBottom: 10 },
 
   loadingContainer: {
     flex: 1,
@@ -357,5 +330,4 @@ const styles = StyleSheet.create({
       },
     }),
   },
-
 });
