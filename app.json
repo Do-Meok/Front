@@ -48,7 +48,10 @@
           ]
         }
       ],
-      "package": "com.hwanghotae.DoMeok"
+      "package": "com.hwanghotae.DoMeok",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -80,6 +83,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3621eba1-b287-4808-8da4-81bfdafcb809"
+      }
+    },
+    "owner": "domeok"
   }
 }

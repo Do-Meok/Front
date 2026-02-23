@@ -36,7 +36,9 @@ const STORAGE_OPTIONS: {
 export default function IngredientsManagePage() {
   const [hasToken, setHasToken] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
-  const [manualItem, setManualItem] = useState<GetIngredientResponse | null>(null);
+  const [manualItem, setManualItem] = useState<GetIngredientResponse | null>(
+    null,
+  );
   const [manualDate, setManualDate] = useState("");
   const [manualStorage, setManualStorage] = useState<StorageType | null>(null);
   const [batchLoading, setBatchLoading] = useState(false);
@@ -55,8 +57,9 @@ export default function IngredientsManagePage() {
 
   // 유통기한 또는 보관장소 중 하나라도 없는 재료
   const unclassifiedItems = useMemo(
-    () => allItems.filter((item) => !item.expiration_date || !item.storage_type),
-    [allItems]
+    () =>
+      allItems.filter((item) => !item.expiration_date || !item.storage_type),
+    [allItems],
   );
 
   const updateMutation = useUpdateIngredient({ showAlert: false });
@@ -65,7 +68,11 @@ export default function IngredientsManagePage() {
   const toggleCheck = (id: number) => {
     setCheckedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -86,9 +93,7 @@ export default function IngredientsManagePage() {
       queryClient.invalidateQueries({ queryKey: [queryKey.INGREDIENTS] });
     } catch (e: any) {
       const msg =
-        e?.message ||
-        e?.response?.data?.detail ||
-        "자동 입력에 실패했습니다.";
+        e?.message || e?.response?.data?.detail || "자동 입력에 실패했습니다.";
       Alert.alert("오류", msg);
     } finally {
       setLoadingIds((prev) => {
@@ -154,12 +159,14 @@ export default function IngredientsManagePage() {
 
     updateMutation.mutate(
       { ingredientId: manualItem.id, data },
-      { onSuccess: () => setManualItem(null) }
+      { onSuccess: () => setManualItem(null) },
     );
   };
 
   if (error) {
-    return <QueryErrorView error={error} hasToken={hasToken} onRetry={refetch} />;
+    return (
+      <QueryErrorView error={error} hasToken={hasToken} onRetry={refetch} />
+    );
   }
 
   return (
@@ -321,7 +328,11 @@ export default function IngredientsManagePage() {
                 keyboardType="numeric"
                 maxLength={10}
               />
-              <Ionicons name="calendar-outline" size={20} color={colors.INACTIVE} />
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={colors.INACTIVE}
+              />
             </View>
 
             {/* 보관 방법 */}
@@ -333,7 +344,10 @@ export default function IngredientsManagePage() {
                   <Pressable
                     key={type}
                     onPress={() => setManualStorage(type)}
-                    style={[styles.storageBtn, active && styles.storageBtnActive]}
+                    style={[
+                      styles.storageBtn,
+                      active && styles.storageBtnActive,
+                    ]}
                   >
                     <Ionicons
                       name={icon}

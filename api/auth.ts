@@ -43,8 +43,8 @@ async function getKakaoAuthUrl(): Promise<string> {
   const { data } = await axiosInstance.get<{ auth_url: string }>(
     `${PREFIX}/auth/kakao`,
   );
+
   return data.auth_url;
 }
 
-export { login, logout, refreshToken, getKakaoAuthUrl };
-
+export { getKakaoAuthUrl, login, logout, refreshToken };
