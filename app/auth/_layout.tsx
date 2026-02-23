@@ -71,6 +71,10 @@ export default function AuthLayout() {
         name="logout-loading"
         options={{ title: "로그아웃", headerShown: false }}
       />
+      <Stack.Screen
+        name="kakao-webview"
+        options={{ title: "카카오 로그인", headerShown: false }}
+      />
     </Stack>
   );
 }

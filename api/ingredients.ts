@@ -88,7 +88,7 @@ async function getIngredient(
 async function autoFillIngredient(
   ingredientId: number
 ): Promise<AutoFillIngredientResponse> {
-  const { data } = await axiosInstance.get<AutoFillIngredientResponse>(
+  const { data } = await axiosInstance.post<AutoFillIngredientResponse>(
     `${PREFIX}/ingredients/${ingredientId}/auto`
   );
   return data;
