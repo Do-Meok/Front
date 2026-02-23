@@ -3,8 +3,7 @@ import { router } from "expo-router";
 import type { TabBarItem } from "./types";
 
 export function getRecipeTabBarItems(pathname: string): TabBarItem[] {
-  const inRecipes =
-    pathname === "/recipes" || pathname.startsWith("/recipes/");
+  const inRecipes = pathname === "/recipes" || pathname.startsWith("/recipes/");
 
   return [
     {
@@ -21,6 +20,19 @@ export function getRecipeTabBarItems(pathname: string): TabBarItem[] {
       go: () => router.replace("/"),
     },
     {
+      key: "recommend",
+      label: "AI 레시피 추천",
+      focused: pathname.startsWith("/recipes/recommend"),
+      icon: (focused: boolean, color: string) => (
+        <Ionicons
+          name={focused ? "sparkles" : "sparkles-outline"}
+          size={20}
+          color={color}
+        />
+      ),
+      go: () => router.replace("/recipes/recommend"),
+    },
+    {
       key: "recipes",
       label: "레시피",
       focused:
@@ -35,19 +47,6 @@ export function getRecipeTabBarItems(pathname: string): TabBarItem[] {
         />
       ),
       go: () => router.replace("/recipes"),
-    },
-    {
-      key: "recommend",
-      label: "AI 레시피 추천",
-      focused: pathname.startsWith("/recipes/recommend"),
-      icon: (focused: boolean, color: string) => (
-        <Ionicons
-          name={focused ? "sparkles" : "sparkles-outline"}
-          size={20}
-          color={color}
-        />
-      ),
-      go: () => router.replace("/recipes/recommend"),
     },
     {
       key: "log",
