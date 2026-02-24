@@ -10,12 +10,13 @@ export default function AuthButton() {
     router.push("/auth/login");
   };
 
+  const onPressKakao = () => {
+    router.push("/auth/kakao-webview");
+  };
+
   return (
     <>
-      <Pressable
-        style={styles.kakaoBtn}
-        onPress={() => router.push("/auth/kakao-webview")}
-      >
+      <Pressable style={styles.kakaoBtn} onPress={onPressKakao}>
         <Text style={styles.kakaoBtnText}>카카오로 로그인</Text>
       </Pressable>
 

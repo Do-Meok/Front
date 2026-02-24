@@ -1,7 +1,7 @@
 import { getKakaoAuthUrl } from "@/api/auth";
 import axiosInstance, { PREFIX } from "@/api/axios";
 import BackHeader from "@/components/BackHeader";
-import { INJECTED_JS } from "@/constants";
+import { INJECTED_JS } from "@/constants/injected_js";
 import { useNavigationContext } from "@/providers/NavigationProvider";
 import { saveSecureStore } from "@/utils/secureStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";

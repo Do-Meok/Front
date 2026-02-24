@@ -19,7 +19,7 @@ export default function TabBarItem({
   icon,
   label,
   color,
-  rippleColor = "#00000010",
+  rippleColor = colors.BLACK,
 }: TabBarItemProps) {
   return (
     <View style={[styles.itemWrap, showDividerRight && styles.dividerRight]}>
