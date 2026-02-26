@@ -15,4 +15,3 @@ async function deleteSecureStore(key: string) {
 }
 
 export { deleteSecureStore, getSecureStore, saveSecureStore };
-

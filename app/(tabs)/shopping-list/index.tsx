@@ -4,6 +4,7 @@ import QueryErrorView from "@/components/QueryErrorView";
 import useCreateShopping from "@/hooks/shopping-list/useCreateShopping";
 import useDeleteShopping from "@/hooks/shopping-list/useDeleteShopping";
 import useGetShoppingList from "@/hooks/shopping-list/useGetShoppingList";
+import { useTutorial, type TutorialStep } from "@/providers/TutorialProvider";
 import { ShoppingListResponse } from "@/types";
 import { getSecureStore } from "@/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +16,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+
 import {
   ActivityIndicator,
   Alert,
@@ -26,6 +28,20 @@ import {
   View,
 } from "react-native";
 
+const SHOPPING_TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    description: "장보기 리스트 탭이에요.\n필요한 재료를 메모처럼 관리해요.",
+  },
+  {
+    targetId: "shopping-input-row",
+    description: "살 것을 입력하고 + 버튼을 눌러 추가하세요.",
+  },
+  {
+    targetId: "shopping-list-area",
+    description: "항목을 체크하면 구매 완료로 이동해요.\n완료된 목록은 따로 관리돼요.",
+  },
+];
+
 export default function ShoppingListScreen() {
   const [inputValue, setInputValue] = useState("");
   const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
@@ -34,6 +50,11 @@ export default function ShoppingListScreen() {
   const pendingChangesRef = useRef<Map<number, boolean>>(new Map());
   // useFocusEffect cleanup에서 최신 items 참조용
   const itemsRef = useRef<ShoppingListResponse[]>([]);
+
+  // 튜토리얼 refs
+  const inputRowRef = useRef<View>(null);
+  const listAreaRef = useRef<View>(null);
+  const { registerTarget, unregisterTarget, startTutorialIfNeeded } = useTutorial();
 
   useEffect(() => {
     getSecureStore("accessToken").then((token) => setHasToken(!!token));
@@ -57,7 +78,23 @@ export default function ShoppingListScreen() {
     itemsRef.current = items;
   }, [items]);
 
+  // 튜토리얼 target 등록
+  useEffect(() => {
+    registerTarget("shopping-input-row", inputRowRef);
+    registerTarget("shopping-list-area", listAreaRef);
+    return () => {
+      unregisterTarget("shopping-input-row");
+      unregisterTarget("shopping-list-area");
+    };
+  }, [registerTarget, unregisterTarget]);
+
   // 화면을 떠날 때 변경된 항목만 서버로 flush
+  useFocusEffect(
+    useCallback(() => {
+      startTutorialIfNeeded("shopping", SHOPPING_TUTORIAL_STEPS);
+    }, [startTutorialIfNeeded])
+  );
+
   useFocusEffect(
     useCallback(() => {
       return () => {
@@ -172,7 +209,7 @@ export default function ShoppingListScreen() {
       <PageHeader title="장보기 리스트" />
 
       {/* 입력 + 추가 버튼 */}
-      <View style={styles.inputRow}>
+      <View ref={inputRowRef} style={styles.inputRow}>
         <TextInput
           style={styles.input}
           placeholder="무엇을 사야 하나요?"
@@ -202,7 +239,7 @@ export default function ShoppingListScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* 구매 예정 목록 */}
-          <View style={styles.section}>
+          <View ref={listAreaRef} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>구매 예정 목록</Text>
               {toBuyList.length > 0 && (

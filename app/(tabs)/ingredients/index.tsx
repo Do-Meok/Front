@@ -7,12 +7,14 @@ import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
 import useDeleteIngredient from "@/hooks/ingredients/useDeleteIngredient";
 import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
+import { useTutorial, type TutorialStep } from "@/providers/TutorialProvider";
 import { GetIngredientResponse, StorageType } from "@/types";
 import { daysLeft } from "@/utils/date";
 import { getSecureStore } from "@/utils/secureStore";
 import { fromKoreanStorageType, toKoreanStorageType } from "@/utils/storageType";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -23,6 +25,24 @@ import {
   Text,
   View,
 } from "react-native";
+
+const INGREDIENT_TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    description: "재료 탭이에요.\n냉장고의 식재료를 한곳에서 관리해요.",
+  },
+  {
+    targetId: "ingredient-filter",
+    description: "카테고리별로 재료를 필터링할 수 있어요.\n냉장, 냉동, 실온으로 구분해요.",
+  },
+  {
+    targetId: "ingredient-first-item",
+    description: "각 재료의 유통기한과 보관 방법을 확인해요.\n수정·삭제도 바로 할 수 있어요.",
+  },
+  {
+    targetId: "ingredient-fab",
+    description: "이 버튼으로 새 재료를 추가할 수 있어요.\n영수증 촬영 또는 직접 입력이 가능해요.",
+  },
+];
 
 type Filter = "전체" | "미분류" | StorageType | "냉장" | "냉동" | "실온";
 
@@ -35,6 +55,29 @@ export default function IngredientsScreen() {
   const [selectedIngredient, setSelectedIngredient] =
     useState<GetIngredientResponse | null>(null);
   const [hasToken, setHasToken] = useState(false);
+
+  // 튜토리얼 refs
+  const filterRowRef = useRef<View>(null);
+  const firstItemRef = useRef<View>(null);
+  const fabRef = useRef<View>(null);
+  const { registerTarget, unregisterTarget, startTutorialIfNeeded } = useTutorial();
+
+  useEffect(() => {
+    registerTarget("ingredient-filter", filterRowRef);
+    registerTarget("ingredient-first-item", firstItemRef);
+    registerTarget("ingredient-fab", fabRef);
+    return () => {
+      unregisterTarget("ingredient-filter");
+      unregisterTarget("ingredient-first-item");
+      unregisterTarget("ingredient-fab");
+    };
+  }, [registerTarget, unregisterTarget]);
+
+  useFocusEffect(
+    useCallback(() => {
+      startTutorialIfNeeded("ingredients", INGREDIENT_TUTORIAL_STEPS);
+    }, [startTutorialIfNeeded])
+  );
 
   useEffect(() => {
     getSecureStore("accessToken").then((token) => setHasToken(!!token));
@@ -98,7 +141,7 @@ export default function IngredientsScreen() {
       <PageHeader title="재료" />
 
       {/* 필터 탭 */}
-      <View style={styles.filterRow}>
+      <View ref={filterRowRef} style={styles.filterRow}>
         {(["전체", "미분류", "냉장", "냉동", "실온"] as const).map((t) => {
           const active = filter === t;
           return (
@@ -130,14 +173,14 @@ export default function IngredientsScreen() {
           data={sortedItems}
           keyExtractor={(x) => String(x.id)}
           contentContainerStyle={{ paddingBottom: 10 }}
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const d = daysLeft(item.expiration_date);
             const dText =
               d !== null ? (d >= 0 ? `D-${d}` : `D+${Math.abs(d)}`) : "미설정";
             const storageText = toKoreanStorageType(item.storage_type);
 
             return (
-              <View style={styles.card}>
+              <View ref={index === 0 ? firstItemRef : undefined} style={styles.card}>
                 <View style={styles.cardLeft}>
                   <View style={styles.iconBox}>
                     <IngredientIcon
@@ -188,6 +231,7 @@ export default function IngredientsScreen() {
 
       {/* + FAB */}
       <Pressable
+        ref={fabRef}
         style={styles.fab}
         onPress={() => {
           setEditModalOpen(false);

@@ -1,6 +1,8 @@
 import { colors } from "@/constants";
+import { useTutorial } from "@/providers/TutorialProvider";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { usePathname } from "expo-router";
+import { useEffect, useRef } from "react";
 import {
   Platform,
   StyleProp,
@@ -23,6 +25,13 @@ export default function SketchTabBar({
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const tabBarRef = useRef<View>(null);
+  const { registerTarget, unregisterTarget } = useTutorial();
+
+  useEffect(() => {
+    registerTarget("tab-bar", tabBarRef);
+    return () => unregisterTarget("tab-bar");
+  }, [registerTarget, unregisterTarget]);
 
   const inIngredients =
     pathname === "/ingredients" || pathname.startsWith("/ingredients/");
@@ -42,7 +51,7 @@ export default function SketchTabBar({
   // ✅ 재료 영역이면 재료 전용 탭바
   if (inIngredients) {
     return (
-      <View style={wrapStyle}>
+      <View ref={tabBarRef} style={wrapStyle}>
         {ingredientItems.map((item, index) => {
           const color = item.focused ? colors.BLACK : colors.INACTIVE;
           return (
@@ -65,7 +74,7 @@ export default function SketchTabBar({
   // ✅ 레시피 영역이면 레시피 전용 탭바
   if (inRecipes) {
     return (
-      <View style={wrapStyle}>
+      <View ref={tabBarRef} style={wrapStyle}>
         {recipeItems.map((item, index) => {
           const color = item.focused ? colors.BLACK : colors.INACTIVE;
           return (
@@ -87,7 +96,7 @@ export default function SketchTabBar({
 
   // ✅ 기본(메인) 탭바
   return (
-    <View style={wrapStyle}>
+    <View ref={tabBarRef} style={wrapStyle}>
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const focused = state.index === state.routes.findIndex((r) => r.key === route.key);

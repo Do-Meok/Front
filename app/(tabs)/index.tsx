@@ -10,10 +10,11 @@ import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendation
 import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
+import { useTutorial, type TutorialStep } from "@/providers/TutorialProvider";
 import type { GetIngredientResponse, RecipeRecommendationItem } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useMemo } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -25,6 +26,28 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const HOME_TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    description: "홈 화면이에요.\n주요 기능들을 한눈에 확인할 수 있어요.",
+  },
+  {
+    targetId: "home-header",
+    description: "오른쪽 상단에서 알림과 마이페이지에 접근할 수 있어요.",
+  },
+  {
+    targetId: "home-recipe-area",
+    description: "보유 재료를 기반으로 추천 레시피를 보여드려요.\n탭하면 상세 레시피를 확인할 수 있어요.",
+  },
+  {
+    targetId: "home-expiring-area",
+    description: "유통기한이 가까운 재료를 알려드려요.\n미리 확인하고 요리에 활용해보세요.",
+  },
+  {
+    targetId: "tab-bar",
+    description: "하단 탭에서 재료 관리, 레시피 검색,\n장보기 리스트로 이동할 수 있어요.",
+  },
+];
 
 const { height: SCREEN_H } = Dimensions.get("window");
 const HERO_HEIGHT = Math.round(Math.min(280, SCREEN_H * 0.32));
@@ -111,37 +134,64 @@ export default function HomeScreen() {
   const hasRecommendations = featuredItems.length > 0;
   const isRecommendDone = !isRecommendLoading || !!recommendationsData;
 
+  // 튜토리얼 ref 등록
+  const headerRef = useRef<View>(null);
+  const recipeAreaRef = useRef<View>(null);
+  const expiringAreaRef = useRef<View>(null);
+  const { registerTarget, unregisterTarget, startTutorialIfNeeded } = useTutorial();
+
+  useEffect(() => {
+    registerTarget("home-header", headerRef);
+    registerTarget("home-recipe-area", recipeAreaRef);
+    registerTarget("home-expiring-area", expiringAreaRef);
+    return () => {
+      unregisterTarget("home-header");
+      unregisterTarget("home-recipe-area");
+      unregisterTarget("home-expiring-area");
+    };
+  }, [registerTarget, unregisterTarget]);
+
+  useFocusEffect(
+    useCallback(() => {
+      startTutorialIfNeeded("home", HOME_TUTORIAL_STEPS);
+    }, [startTutorialIfNeeded])
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <HomeHeader
-        onPressBell={() => {}}
-        onPressProfile={() => router.push("/mypage")}
-      />
+      <View ref={headerRef}>
+        <HomeHeader
+          onPressBell={() => {}}
+          onPressProfile={() => router.push("/mypage")}
+        />
+      </View>
       <ScrollView
         style={styles.page}
         contentContainerStyle={styles.pageContent}
         showsVerticalScrollIndicator={false}
       >
         {/* 추천 레시피 영역 */}
-        {isRecommendLoading && !recommendationsData ? (
-          <View style={styles.recommendLoading}>
-            <ActivityIndicator size="small" color={colors.BLACK} />
-            <Text style={styles.recommendLoadingText}>추천 불러오는 중...</Text>
-          </View>
-        ) : recommendError && !recommendationsData ? (
-          <View style={styles.recommendLoading}>
-            <Text style={styles.recommendLoadingText}>
-              추천을 불러올 수 없어요
-            </Text>
-          </View>
-        ) : hasRecommendations ? (
-          <FeaturedRecipeCarousel
-            titleLabel="오늘의 추천"
-            items={featuredItems}
-            onPressItem={handlePressRecipeItem}
-            heroImageHeight={HERO_HEIGHT}
-          />
-        ) : null}
+        <View ref={recipeAreaRef}>
+          {isRecommendLoading && !recommendationsData ? (
+            <View style={styles.recommendLoading}>
+              <ActivityIndicator size="small" color={colors.BLACK} />
+              <Text style={styles.recommendLoadingText}>추천 불러오는 중...</Text>
+            </View>
+          ) : recommendError && !recommendationsData ? (
+            <View style={styles.recommendLoading}>
+              <Text style={styles.recommendLoadingText}>
+                추천을 불러올 수 없어요
+              </Text>
+            </View>
+          ) : hasRecommendations ? (
+            <FeaturedRecipeCarousel
+              titleLabel="오늘의 추천"
+              items={featuredItems}
+              onPressItem={handlePressRecipeItem}
+              heroImageHeight={HERO_HEIGHT}
+            />
+          ) : null}
+        </View>
 
         {/* 재료도 없고 추천도 없을 때 → 재료 추가 유도 */}
         {!isInitialLoading && !hasIngredients && !hasRecommendations && (
@@ -173,9 +223,11 @@ export default function HomeScreen() {
           )}
 
         {/* 유통기한 마감 */}
-        {expiringItems.length > 0 && (
-          <ExpiringCarousel items={expiringItems} onPressItem={() => {}} />
-        )}
+        <View ref={expiringAreaRef}>
+          {expiringItems.length > 0 && (
+            <ExpiringCarousel items={expiringItems} onPressItem={() => {}} />
+          )}
+        </View>
       </ScrollView>
 
       {/* 초기 데이터 로딩 화면 */}

@@ -13,4 +13,3 @@ function removeHeader(key: string) {
 }
 
 export { removeHeader, setHeader };
-

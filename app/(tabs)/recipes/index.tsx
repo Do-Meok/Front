@@ -3,8 +3,10 @@ import RecipeDetailContent from "@/components/RecipeDetailContent";
 import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import useSearchRecipesByName from "@/hooks/assistant/useSearchRecipesByName";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
+import { useTutorial, type TutorialStep } from "@/providers/TutorialProvider";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -15,6 +17,20 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const RECIPE_TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    description: "레시피 탭이에요.\n다양한 방법으로 레시피를 찾을 수 있어요.",
+  },
+  {
+    targetId: "recipe-search",
+    description: "요리명을 검색하면 정석 레시피를 알려드려요.\n(예: 김치찌개, 된장찌개)",
+  },
+  {
+    targetId: "tab-bar",
+    description: "AI 추천 탭에서 냉장고 재료 기반 맞춤 레시피를,\n요리 기록 탭에서 기록을 확인해보세요.",
+  },
+];
 
 export default function RecipesIndexScreen() {
   const insets = useSafeAreaInsets();
@@ -29,6 +45,21 @@ export default function RecipesIndexScreen() {
   } = useSearchRecipesByName(searchTerm.trim());
   const saveRecipeMutation = useSaveRecipe();
 
+  // 튜토리얼 refs
+  const searchRef = useRef<View>(null);
+  const { registerTarget, unregisterTarget, startTutorialIfNeeded } = useTutorial();
+
+  useEffect(() => {
+    registerTarget("recipe-search", searchRef);
+    return () => unregisterTarget("recipe-search");
+  }, [registerTarget, unregisterTarget]);
+
+  useFocusEffect(
+    useCallback(() => {
+      startTutorialIfNeeded("recipes", RECIPE_TUTORIAL_STEPS);
+    }, [startTutorialIfNeeded])
+  );
+
   const handleSearch = () => {
     Keyboard.dismiss();
     const trimmed = query.trim();
@@ -42,7 +73,7 @@ export default function RecipesIndexScreen() {
 
   return (
     <View style={[styles.page, { paddingTop: insets.top + 14 }]}>
-      <View style={styles.searchSection}>
+      <View ref={searchRef} style={styles.searchSection}>
         <View style={styles.search}>
           <Ionicons name="search-outline" size={18} color="#666" />
           <TextInput

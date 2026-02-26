@@ -68,7 +68,6 @@ export type UpdateUserInfoForm = {
 };
 
 // Refresh 관련 타입
-
 export type RefreshRequest = {
   accessToken?: string;
   access_token?: string;
