@@ -3,6 +3,7 @@ import RecipeDetailContent from "@/components/RecipeDetailContent";
 import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import useSearchRecipesByName from "@/hooks/assistant/useSearchRecipesByName";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
+import { useNavigationContext } from "@/providers/NavigationProvider";
 import { useTutorial, type TutorialStep } from "@/providers/TutorialProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
@@ -48,6 +49,7 @@ export default function RecipesIndexScreen() {
   // 튜토리얼 refs
   const searchRef = useRef<View>(null);
   const { registerTarget, unregisterTarget, startTutorialIfNeeded } = useTutorial();
+  const { hasToken } = useNavigationContext();
 
   useEffect(() => {
     registerTarget("recipe-search", searchRef);
@@ -56,8 +58,9 @@ export default function RecipesIndexScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!hasToken) return;
       startTutorialIfNeeded("recipes", RECIPE_TUTORIAL_STEPS);
-    }, [startTutorialIfNeeded])
+    }, [startTutorialIfNeeded, hasToken])
   );
 
   const handleSearch = () => {

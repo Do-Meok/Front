@@ -7,6 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
 import useDeleteIngredient from "@/hooks/ingredients/useDeleteIngredient";
 import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
+import { useNavigationContext } from "@/providers/NavigationProvider";
 import { useTutorial, type TutorialStep } from "@/providers/TutorialProvider";
 import { GetIngredientResponse, StorageType } from "@/types";
 import { daysLeft } from "@/utils/date";
@@ -61,6 +62,7 @@ export default function IngredientsScreen() {
   const firstItemRef = useRef<View>(null);
   const fabRef = useRef<View>(null);
   const { registerTarget, unregisterTarget, startTutorialIfNeeded } = useTutorial();
+  const { hasToken: isLoggedIn } = useNavigationContext();
 
   useEffect(() => {
     registerTarget("ingredient-filter", filterRowRef);
@@ -75,8 +77,9 @@ export default function IngredientsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!isLoggedIn) return;
       startTutorialIfNeeded("ingredients", INGREDIENT_TUTORIAL_STEPS);
-    }, [startTutorialIfNeeded])
+    }, [startTutorialIfNeeded, isLoggedIn])
   );
 
   useEffect(() => {

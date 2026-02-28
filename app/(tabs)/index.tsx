@@ -10,6 +10,7 @@ import useGetRecommendationsRecipes from "@/hooks/assistant/useGetRecommendation
 import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
+import { useNavigationContext } from "@/providers/NavigationProvider";
 import { useTutorial, type TutorialStep } from "@/providers/TutorialProvider";
 import type { GetIngredientResponse, RecipeRecommendationItem } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -139,6 +140,7 @@ export default function HomeScreen() {
   const recipeAreaRef = useRef<View>(null);
   const expiringAreaRef = useRef<View>(null);
   const { registerTarget, unregisterTarget, startTutorialIfNeeded } = useTutorial();
+  const { hasToken } = useNavigationContext();
 
   useEffect(() => {
     registerTarget("home-header", headerRef);
@@ -153,8 +155,9 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!hasToken) return;
       startTutorialIfNeeded("home", HOME_TUTORIAL_STEPS);
-    }, [startTutorialIfNeeded])
+    }, [startTutorialIfNeeded, hasToken])
   );
 
   return (

@@ -4,6 +4,7 @@ import QueryErrorView from "@/components/QueryErrorView";
 import useCreateShopping from "@/hooks/shopping-list/useCreateShopping";
 import useDeleteShopping from "@/hooks/shopping-list/useDeleteShopping";
 import useGetShoppingList from "@/hooks/shopping-list/useGetShoppingList";
+import { useNavigationContext } from "@/providers/NavigationProvider";
 import { useTutorial, type TutorialStep } from "@/providers/TutorialProvider";
 import { ShoppingListResponse } from "@/types";
 import { getSecureStore } from "@/utils/secureStore";
@@ -55,6 +56,7 @@ export default function ShoppingListScreen() {
   const inputRowRef = useRef<View>(null);
   const listAreaRef = useRef<View>(null);
   const { registerTarget, unregisterTarget, startTutorialIfNeeded } = useTutorial();
+  const { hasToken: isLoggedIn } = useNavigationContext();
 
   useEffect(() => {
     getSecureStore("accessToken").then((token) => setHasToken(!!token));
@@ -91,8 +93,9 @@ export default function ShoppingListScreen() {
   // 화면을 떠날 때 변경된 항목만 서버로 flush
   useFocusEffect(
     useCallback(() => {
+      if (!isLoggedIn) return;
       startTutorialIfNeeded("shopping", SHOPPING_TUTORIAL_STEPS);
-    }, [startTutorialIfNeeded])
+    }, [startTutorialIfNeeded, isLoggedIn])
   );
 
   useFocusEffect(
