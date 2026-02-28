@@ -185,6 +185,16 @@ export type SaveRecipeResponse = RecipeDetailResponse & {
   created_at: string; // ISO 8601 형식 (예: "2019-08-24T14:15:22Z")
 };
 
+export type RecipeDeleteResponseDetail = {
+  loc: string[];
+  msg: string;
+  type: string;
+};
+
+export type RecipeDeleteResponse = {
+  detail: RecipeDeleteResponseDetail[];
+};
+
 /** 냉장고 한 대 (시각화용: 가로/세로 칸) */
 export type Fridge = {
   id: string;
@@ -245,4 +255,13 @@ export type RefrigeratorAddResponse = {
   name: string;
   pos_x: number;
   pos_y: number;
+};
+
+// GET /refrigerator 목록 응답 (compartments 포함)
+export type RefrigeratorListItem = {
+  id: number;
+  name: string;
+  pos_x: number;
+  pos_y: number;
+  compartments: Compartment[];
 };

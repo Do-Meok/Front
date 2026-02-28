@@ -24,6 +24,8 @@ type FridgeContextType = {
   isLoaded: boolean;
   addFridge: (fridge: Omit<Fridge, "id">) => void;
   setFridges: React.Dispatch<React.SetStateAction<Fridge[]>>;
+  removeFridge: (apiId: number) => void;
+  refreshFridges: () => Promise<void>;
   localAssignments: Record<number, CompartmentIngredient[]>;
   addLocalAssignment: (compartmentId: number, item: CompartmentIngredient) => void;
   removeLocalIngredient: (ingredientId: number) => void;
@@ -75,16 +77,22 @@ export function FridgeProvider({ children }: { children: React.ReactNode }) {
       try {
         const serverFridges = await getRefrigerators();
         if (!isMounted) return;
-        setFridges(
-          serverFridges.map((f) => ({
+        // 전체 교체 대신 병합: 서버에 없는 로컬 냉장고(race condition)도 유지
+        const serverApiIds = new Set(serverFridges.map((f) => f.id));
+        setFridges((prev) => {
+          const serverMapped = serverFridges.map((f) => ({
             id: String(f.id),
             apiId: f.id,
             name: f.name,
             cols: f.pos_x,
             rows: f.pos_y,
             cellIngredients: {},
-          }))
-        );
+          }));
+          const localOnly = prev.filter(
+            (f) => f.apiId !== undefined && !serverApiIds.has(f.apiId)
+          );
+          return [...serverMapped, ...localOnly];
+        });
       } catch {
         // 서버 동기화 실패 시 AsyncStorage 캐시 유지
       }
@@ -127,6 +135,29 @@ export function FridgeProvider({ children }: { children: React.ReactNode }) {
     ]);
   }, []);
 
+  const removeFridge = useCallback((apiId: number) => {
+    setFridges((prev) => prev.filter((f) => f.apiId !== apiId));
+  }, []);
+
+  // 탭 포커스 시 명시적 호출용 — 서버 최신 목록으로 전체 교체 (다기기 삭제 반영)
+  const refreshFridges = useCallback(async () => {
+    try {
+      const serverFridges = await getRefrigerators();
+      setFridges(
+        serverFridges.map((f) => ({
+          id: String(f.id),
+          apiId: f.id,
+          name: f.name,
+          cols: f.pos_x,
+          rows: f.pos_y,
+          cellIngredients: {},
+        }))
+      );
+    } catch {
+      // 실패 시 기존 상태 유지
+    }
+  }, []);
+
   const addLocalAssignment = useCallback(
     (compartmentId: number, item: CompartmentIngredient) => {
       setLocalAssignments((prev) => ({
@@ -157,6 +188,8 @@ export function FridgeProvider({ children }: { children: React.ReactNode }) {
         isLoaded,
         addFridge,
         setFridges,
+        removeFridge,
+        refreshFridges,
         localAssignments,
         addLocalAssignment,
         removeLocalIngredient,

@@ -3,6 +3,7 @@ import PageHeader from "@/components/PageHeader";
 import { queryKey } from "@/constants";
 import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useAssignIngredientToCompartment from "@/hooks/refrigerator/useAssignIngredientToCompartment";
+import useDeleteRefrigerator from "@/hooks/refrigerator/useDeleteRefrigerator";
 import useGetCompartmentIngredients from "@/hooks/refrigerator/useGetCompartmentIngredients";
 import useGetRefrigerator from "@/hooks/refrigerator/useGetRefrigerator";
 import { useFridgeContext } from "@/providers/FridgeProvider";
@@ -10,24 +11,34 @@ import type { Compartment, CompartmentIngredient } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueries } from "@tanstack/react-query";
 import { type Href, router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 
 export default function FridgeScreen() {
-  const { fridges, isLoaded, localAssignments, addLocalAssignment } = useFridgeContext();
+  const { fridges, isLoaded, localAssignments, addLocalAssignment, removeLocalIngredient, refreshFridges } =
+    useFridgeContext();
   const assignMutation = useAssignIngredientToCompartment();
+  const deleteMutation = useDeleteRefrigerator();
   const [selectedFridgeIdx, setSelectedFridgeIdx] = useState(0);
+
+  // 탭 진입 시마다 서버에서 최신 냉장고 목록 조회 (다기기 변경 반영)
+  useFocusEffect(
+    useCallback(() => {
+      refreshFridges();
+    }, [refreshFridges])
+  );
   const [fridgePickerOpen, setFridgePickerOpen] = useState(false);
   const [selectedCompartment, setSelectedCompartment] =
     useState<Compartment | null>(null);
@@ -130,6 +141,29 @@ export default function FridgeScreen() {
     setAddModalVisible(true);
   };
 
+  const handleDeleteFridge = () => {
+    if (!currentFridge?.apiId) return;
+    Alert.alert(
+      "냉장고 삭제",
+      `"${currentFridge.name}"을(를) 삭제하시겠습니까?\n삭제된 냉장고는 복구할 수 없습니다.`,
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: () => {
+            deleteMutation.mutate(currentFridge.apiId!, {
+              onSuccess: () => {
+                setSelectedFridgeIdx(0);
+                setSelectedCompartment(null);
+              },
+            });
+          },
+        },
+      ],
+    );
+  };
+
   // 피커에서 검색 필터된 식재료 목록
   const filteredIngredients = useMemo(() => {
     if (!allIngredients) return [];
@@ -154,6 +188,7 @@ export default function FridgeScreen() {
     selectedCompartment,
     pickerSearch,
   ]);
+
   const renderIngredientItem = ({ item }: { item: CompartmentIngredient }) => {
     const isExpiringSoon = item.expiration_date
       ? new Date(item.expiration_date).getTime() - Date.now() <
@@ -212,7 +247,9 @@ export default function FridgeScreen() {
         <PageHeader title="냉장고 관리" />
         <View style={styles.emptyFridgeState}>
           <ActivityIndicator size="large" color="#111" />
-          <Text style={styles.emptyFridgeDesc}>냉장고 정보를 불러오는 중...</Text>
+          <Text style={styles.emptyFridgeDesc}>
+            냉장고 정보를 불러오는 중...
+          </Text>
         </View>
       </View>
     );
@@ -311,6 +348,16 @@ export default function FridgeScreen() {
         >
           <Ionicons name="search" size={18} color="#111" />
           <Text style={styles.actionBtnText}>위치 찾기</Text>
+        </Pressable>
+        <Pressable
+          style={styles.actionBtn}
+          onPress={handleDeleteFridge}
+          disabled={deleteMutation.isPending || !currentFridge?.apiId}
+        >
+          <Ionicons name="trash-outline" size={18} color="#FF5F5F" />
+          <Text style={[styles.actionBtnText, styles.deleteBtnText]}>
+            {deleteMutation.isPending ? "삭제 중..." : "냉장고 삭제"}
+          </Text>
         </Pressable>
       </View>
 
@@ -462,8 +509,13 @@ export default function FridgeScreen() {
           ) : ingredientsError ? (
             <View style={styles.sheetEmpty}>
               <Ionicons name="alert-circle-outline" size={40} color="#ddd" />
-              <Text style={styles.sheetEmptyText}>재료를 불러올 수 없습니다.</Text>
-              <Pressable onPress={() => refetchIngredients()} style={styles.retryBtn}>
+              <Text style={styles.sheetEmptyText}>
+                재료를 불러올 수 없습니다.
+              </Text>
+              <Pressable
+                onPress={() => refetchIngredients()}
+                style={styles.retryBtn}
+              >
                 <Text style={styles.retryBtnText}>다시 시도</Text>
               </Pressable>
             </View>
@@ -596,13 +648,27 @@ export default function FridgeScreen() {
                                 is_auto_fillable: false,
                               };
                               // 낙관적 업데이트: 즉시 로컬에 반영 (AsyncStorage에도 저장됨)
-                              addLocalAssignment(selectedCompartment.id, newItem);
+                              addLocalAssignment(
+                                selectedCompartment.id,
+                                newItem,
+                              );
                               setAddModalVisible(false);
-                              // 백엔드에 배정 저장 (실패해도 로컬 데이터는 유지됨)
-                              assignMutation.mutate({
-                                compartmentId: selectedCompartment.id,
-                                ingredientId: item.id,
-                              });
+                              // 백엔드에 배정 저장 (실패 시 낙관적 업데이트 롤백)
+                              assignMutation.mutate(
+                                {
+                                  compartmentId: selectedCompartment.id,
+                                  ingredientId: item.id,
+                                },
+                                {
+                                  onError: () => {
+                                    removeLocalIngredient(item.id);
+                                    Alert.alert(
+                                      "저장 실패",
+                                      "식재료를 냉장고 칸에 저장하지 못했습니다.\n다시 시도해주세요.",
+                                    );
+                                  },
+                                },
+                              );
                             },
                           },
                         ],
@@ -672,7 +738,6 @@ export default function FridgeScreen() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   page: {
@@ -782,6 +847,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: "#111",
+  },
+  deleteBtnText: {
+    color: "#FF5F5F",
   },
   compartmentList: {
     flex: 1,

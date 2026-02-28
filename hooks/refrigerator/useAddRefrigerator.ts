@@ -13,7 +13,11 @@ function useAddRefrigerator() {
       });
     },
     onError: (error: any) => {
-      Alert.alert("오류", error?.response?.data?.message);
+      const detail = error?.response?.data?.detail;
+      const message = Array.isArray(detail)
+        ? detail.map((e: any) => e.msg).join("\n")
+        : detail ?? error?.response?.data?.message ?? "알 수 없는 오류가 발생했습니다.";
+      Alert.alert("냉장고 추가 실패", message);
     },
   });
 }

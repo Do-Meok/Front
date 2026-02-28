@@ -1,14 +1,15 @@
 import type {
-    CompartmentIngredient,
-    RefrigeratorAddRequest,
-    RefrigeratorAddResponse,
-    RefrigeratorResponse,
+  CompartmentIngredient,
+  RefrigeratorAddRequest,
+  RefrigeratorAddResponse,
+  RefrigeratorListItem,
+  RefrigeratorResponse,
 } from "@/types";
 import axiosInstance, { PREFIX } from "./axios";
 
-// 냉장고 목록 조회
-async function getRefrigerators(): Promise<RefrigeratorAddResponse[]> {
-  const { data } = await axiosInstance.get<RefrigeratorAddResponse[]>(
+// 냉장고 전체 조회 (compartments 포함)
+async function getRefrigerators(): Promise<RefrigeratorListItem[]> {
+  const { data } = await axiosInstance.get<RefrigeratorListItem[]>(
     `${PREFIX}/refrigerator`,
   );
   return data;
@@ -35,7 +36,7 @@ async function getRefrigerator(
   return data;
 }
 
-// 냉장고 칸 재료 조회
+// 냉장고 칸 속 재료 조회
 async function getCompartmentIngredients(
   compartmentId: number,
 ): Promise<CompartmentIngredient[]> {
@@ -56,5 +57,17 @@ async function assignIngredientToCompartment(
   );
 }
 
-export { addRefrigerator, assignIngredientToCompartment, getCompartmentIngredients, getRefrigerator, getRefrigerators };
+// 냉장고 삭제
+async function deleteRefrigerator(refrigeratorId: number): Promise<void> {
+  await axiosInstance.delete(`${PREFIX}/refrigerator/${refrigeratorId}`);
+}
+
+export {
+  addRefrigerator,
+  assignIngredientToCompartment,
+  deleteRefrigerator,
+  getCompartmentIngredients,
+  getRefrigerator,
+  getRefrigerators
+};
 
