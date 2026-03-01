@@ -59,6 +59,7 @@ export type InfoResponse = {
   name: string | null;
   birth: string | null;
   phone_num: string | null;
+  provider?: string; // 'kakao' | 'email' 등 — 백엔드가 반환할 경우 사용
 };
 
 export type UpdateUserInfoForm = {

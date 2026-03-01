@@ -33,6 +33,12 @@ export default function MyPageScreen() {
   const missingInfo =
     userInfo && (!userInfo.name || !userInfo.birth || !userInfo.phone_num);
 
+  // 백엔드가 provider 필드를 반환할 경우 카카오 유저 감지
+  const isKakaoUser = userInfo?.provider === "kakao";
+
+  // 닉네임 첫 글자를 아바타에 표시
+  const avatarText = userInfo?.nickname ? userInfo.nickname.charAt(0) : "?";
+
   function renderBody() {
     if (isLoading && !userInfo) {
       return (
@@ -53,7 +59,6 @@ export default function MyPageScreen() {
       );
     }
 
-    // 조회 성공 → 유저 정보 표시
     return (
       <>
         <ScrollView
@@ -61,88 +66,80 @@ export default function MyPageScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* 프로필 아이콘 */}
-          <View style={styles.profileIcon}>
-            <Ionicons name="person" size={48} color={colors.BLACK} />
+          {/* 프로필 */}
+          <View style={styles.profileSection}>
+            <View style={styles.profileAvatar}>
+              <Text style={styles.profileAvatarText}>{avatarText}</Text>
+            </View>
+            <Text style={styles.profileNickname}>
+              {userInfo?.nickname || "-"}
+            </Text>
+            {isKakaoUser && (
+              <View style={styles.kakaoBadge}>
+                <Text style={styles.kakaoBadgeText}>카카오 로그인</Text>
+              </View>
+            )}
           </View>
 
-          {/* 유저 정보 - 본인인증 정보 없을 시 안내 카드 */}
+          {/* 본인인증 정보 없을 시 안내 카드 (탭하면 등록 화면으로 이동) */}
           {missingInfo && (
-            <View style={styles.card}>
-              <View style={styles.infoRow}>
-                <View>
-                  <Text style={styles.infoLabel}>본인인증 정보가 없습니다</Text>
-                  <Text
-                    style={[
-                      styles.infoValue,
-                      { marginTop: 4, fontSize: 13, fontWeight: "400" },
-                    ]}
-                  >
-                    아이디/비밀번호 찾기를 위해 정보를 등록해주세요.
-                  </Text>
-                </View>
+            <Pressable
+              style={styles.missingInfoCard}
+              onPress={() =>
+                router.push({
+                  pathname: "/auth/fill-user-info" as any,
+                  params: {
+                    name: userInfo?.name ?? "",
+                    birth: userInfo?.birth ?? "",
+                    phone_num: userInfo?.phone_num ?? "",
+                  },
+                })
+              }
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.missingInfoTitle}>
+                  본인인증 정보가 없습니다
+                </Text>
+                <Text style={styles.missingInfoDesc}>
+                  아이디/비밀번호 찾기를 위해 정보를 등록해주세요.
+                </Text>
               </View>
-            </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
+            </Pressable>
           )}
 
-          <View style={styles.infoSection}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>닉네임</Text>
-              <Text style={styles.infoValue}>{userInfo?.nickname || "-"}</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>이메일</Text>
-              <Text style={styles.infoValue}>{userInfo?.email || "-"}</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>이름</Text>
-              <Text
-                style={[
-                  styles.infoValue,
-                  !userInfo?.name && styles.infoValueEmpty,
-                ]}
-              >
-                {userInfo?.name || "-"}
-              </Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>생년월일</Text>
-              <Text
-                style={[
-                  styles.infoValue,
-                  !userInfo?.birth && styles.infoValueEmpty,
-                ]}
-              >
-                {userInfo?.birth || "-"}
-              </Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>전화번호</Text>
-              <Text
-                style={[
-                  styles.infoValue,
-                  !userInfo?.phone_num && styles.infoValueEmpty,
-                ]}
-              >
-                {userInfo?.phone_num || "-"}
-              </Text>
-            </View>
-
-            {/* 설정 메뉴 (로그인 상태) */}
-            <View style={styles.menuSection}>
-              <Text style={styles.menuSectionTitle}>설정</Text>
-              <SettingItem
-                label="비밀번호 변경"
-                onPress={() => router.push("/auth/change-password")}
+          {/* 계정 정보 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>계정 정보</Text>
+            <View style={styles.infoCard}>
+              <InfoRow label="이메일" value={userInfo?.email} />
+              <InfoRow label="이름" value={userInfo?.name} />
+              <InfoRow label="생년월일" value={userInfo?.birth} />
+              <InfoRow
+                label="전화번호"
+                value={userInfo?.phone_num}
+                isLast
               />
+            </View>
+          </View>
+
+          {/* 설정 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>설정</Text>
+            <View style={styles.settingsCard}>
               <SettingItem
                 label="닉네임 변경"
                 onPress={() => router.push("/auth/change-nickname")}
+                style={styles.settingItem}
               />
+              {/* 카카오 유저는 비밀번호가 없으므로 숨김 */}
+              {!isKakaoUser && (
+                <SettingItem
+                  label="비밀번호 변경"
+                  onPress={() => router.push("/auth/change-password")}
+                  style={styles.settingItem}
+                />
+              )}
               <SettingItem
                 label={missingInfo ? "내 정보 등록하기" : "내 정보 수정하기"}
                 onPress={() =>
@@ -155,27 +152,33 @@ export default function MyPageScreen() {
                     },
                   })
                 }
+                style={[styles.settingItem, { borderBottomWidth: 0 }]}
               />
             </View>
+          </View>
 
-            {/* 임시: 온보딩 다시 보기 on/off */}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>온보딩 다시 보기 (임시)</Text>
-              <Switch
-                value={!isOnboardingCompleted}
-                onValueChange={async (on) => {
-                  if (on) {
-                    await AsyncStorage.setItem("onboarding_completed", "false");
-                    setOnboardingCompleted(false);
-                    router.replace("/(onboarding)");
-                  } else {
-                    await AsyncStorage.setItem("onboarding_completed", "true");
-                    setOnboardingCompleted(true);
-                  }
-                }}
-                trackColor={{ false: "#e0e0e0", true: "#111" }}
-                thumbColor="#fff"
-              />
+          {/* 개발자 옵션 (임시: 온보딩 다시 보기) */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>개발자 옵션</Text>
+            <View style={styles.infoCard}>
+              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.infoLabel}>온보딩 다시 보기</Text>
+                <Switch
+                  value={!isOnboardingCompleted}
+                  onValueChange={async (on) => {
+                    if (on) {
+                      await AsyncStorage.setItem("onboarding_completed", "false");
+                      setOnboardingCompleted(false);
+                      router.replace("/(onboarding)");
+                    } else {
+                      await AsyncStorage.setItem("onboarding_completed", "true");
+                      setOnboardingCompleted(true);
+                    }
+                  }}
+                  trackColor={{ false: "#e0e0e0", true: "#111" }}
+                  thumbColor="#fff"
+                />
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -210,6 +213,26 @@ export default function MyPageScreen() {
   );
 }
 
+// 계정 정보 행 컴포넌트
+function InfoRow({
+  label,
+  value,
+  isLast = false,
+}: {
+  label: string;
+  value?: string | null;
+  isLast?: boolean;
+}) {
+  return (
+    <View style={[styles.infoRow, isLast && { borderBottomWidth: 0 }]}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={[styles.infoValue, !value && styles.infoValueEmpty]}>
+        {value || "미등록"}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -231,40 +254,114 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 24,
-    paddingBottom: 16,
+    paddingBottom: 32,
+    gap: 24,
   },
-  bottomBar: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.BORDER,
-    backgroundColor: colors.WHITE,
+
+  // ── 프로필 ──────────────────────────────────────────────
+  profileSection: {
+    alignItems: "center",
+    gap: 8,
   },
-  profileIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.GRAY_200,
+  profileAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#FEE500",
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center",
-    marginBottom: 32,
+    marginBottom: 4,
   },
-  infoSection: {
-    gap: 20,
+  profileAvatarText: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#000000CC",
   },
+  profileNickname: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.BLACK,
+  },
+  kakaoBadge: {
+    backgroundColor: "#FEE500",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  kakaoBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#000000CC",
+  },
+
+  // ── 미등록 안내 카드 ────────────────────────────────────
+  missingInfoCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#FFFBEB",
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+    borderRadius: 12,
+    padding: 16,
+    gap: 8,
+  },
+  missingInfoTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.BLACK,
+    marginBottom: 4,
+  },
+  missingInfoDesc: {
+    fontSize: 13,
+    color: colors.INACTIVE,
+  },
+
+  // ── 섹션 ────────────────────────────────────────────────
+  section: {
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.INACTIVE,
+    paddingHorizontal: 4,
+    letterSpacing: 0.5,
+  },
+
+  // ── 카드 ────────────────────────────────────────────────
+  infoCard: {
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: colors.WHITE,
+  },
+  settingsCard: {
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: colors.WHITE,
+  },
+  settingItem: {
+    paddingHorizontal: 16,
+  },
+
+  // ── 정보 행 ─────────────────────────────────────────────
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: colors.BORDER,
+    backgroundColor: colors.WHITE,
   },
   infoLabel: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "600",
     color: colors.INACTIVE,
   },
   infoValue: {
@@ -276,21 +373,15 @@ const styles = StyleSheet.create({
     color: colors.INACTIVE,
     fontWeight: "400",
   },
-  menuSection: {
-    marginTop: 24,
-    paddingTop: 16,
-  },
-  menuSectionTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.INACTIVE,
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-  menuItemText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.BLACK,
+
+  // ── 하단 로그아웃 ────────────────────────────────────────
+  bottomBar: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.BORDER,
+    backgroundColor: colors.WHITE,
   },
   logoutBtn: {
     paddingVertical: 14,
@@ -303,13 +394,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: colors.BLACK,
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    backgroundColor: "#fff",
   },
 });

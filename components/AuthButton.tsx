@@ -1,26 +1,18 @@
 import { colors } from "@/constants";
 import { router } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { Pressable, StyleSheet, Text } from "react-native";
 
-WebBrowser.maybeCompleteAuthSession();
-
 export default function AuthButton() {
-  const onPressCommon = () => {
-    router.push("/auth/login");
-  };
-
-  const onPressKakao = () => {
-    router.push("/auth/kakao-webview");
-  };
-
   return (
     <>
-      <Pressable style={styles.kakaoBtn} onPress={onPressKakao}>
+      <Pressable
+        style={styles.kakaoBtn}
+        onPress={() => router.push("/auth/kakao-webview")}
+      >
         <Text style={styles.kakaoBtnText}>카카오로 로그인</Text>
       </Pressable>
 
-      <Pressable style={styles.secondaryBtn} onPress={onPressCommon}>
+      <Pressable style={styles.secondaryBtn} onPress={() => router.push("/auth/login")}>
         <Text style={styles.secondaryBtnText}>일반 로그인으로 시작하기</Text>
       </Pressable>
     </>
@@ -28,27 +20,8 @@ export default function AuthButton() {
 }
 
 const styles = StyleSheet.create({
-  socialBtn: {
-    height: 46,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  kakao: {
-    backgroundColor: "#FEE500",
-  },
   disabled: {
     opacity: 0.7,
-  },
-  loadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  socialBtnText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: colors.BLACK,
   },
   secondaryBtn: {
     height: 46,

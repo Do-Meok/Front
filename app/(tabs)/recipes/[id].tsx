@@ -5,6 +5,7 @@ import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
 import { queryKey } from "@/constants";
 import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
+import useDeleteRecipe from "@/hooks/recipes/useDeleteRecipe";
 import type { GetIngredientResponse, SaveRecipeResponse } from "@/types";
 import { getCompletedRecipeIds, markRecipeCompleted } from "@/utils/completedRecipes";
 import { useFridgeContext } from "@/providers/FridgeProvider";
@@ -39,6 +40,8 @@ export default function RecipeDetailScreen() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoadingCompleted, setIsLoadingCompleted] = useState(true);
   const [isCompletingRecipe, setIsCompletingRecipe] = useState(false);
+
+  const deleteRecipeMutation = useDeleteRecipe();
 
   useEffect(() => {
     if (!id) return;
@@ -113,12 +116,36 @@ export default function RecipeDetailScreen() {
     );
   };
 
+  const handleDeleteRecipe = () => {
+    if (!detail) return;
+    Alert.alert(
+      "요리기록 삭제",
+      "이 레시피를 요리기록에서 삭제하시겠습니까?",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: () => {
+            deleteRecipeMutation.mutate(detail.id, {
+              onSuccess: () => {
+                goBack();
+              },
+            });
+          },
+        },
+      ]
+    );
+  };
+
   const showCompleteBtn =
     !!detail &&
     !isCompleted &&
     !isLoadingCompleted &&
     matchedMap.size > 0 &&
     !isLoading;
+
+  const showActionBar = !!detail && !isLoadingCompleted && !isLoading;
 
   const renderBody = () => {
     if (isLoading) {
@@ -139,7 +166,7 @@ export default function RecipeDetailScreen() {
       );
     }
     return (
-      <ScrollView contentContainerStyle={{ paddingBottom: showCompleteBtn ? 96 : 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: showActionBar ? 96 : 24 }}>
         {/* 헤더 카드 */}
         <View style={styles.hero}>
           <View style={styles.heroIcon}>
@@ -244,20 +271,59 @@ export default function RecipeDetailScreen() {
         }
       />
       {renderBody()}
-      {showCompleteBtn && (
+      {showActionBar && (
         <View style={styles.bottomBar}>
-          <Pressable
-            onPress={handleCompleteRecipe}
-            style={[styles.completeBtn, isCompletingRecipe && styles.completeBtnDisabled]}
-            disabled={isCompletingRecipe}
-          >
-            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-            <Text style={styles.completeBtnText}>
-              {isCompletingRecipe
-                ? "처리 중..."
-                : `요리완료 (재료 소진 ${matchedMap.size}개)`}
-            </Text>
-          </Pressable>
+          {isCompleted ? (
+            // 완료된 레시피: 요리기록에서 삭제 버튼
+            <Pressable
+              onPress={handleDeleteRecipe}
+              style={[styles.deleteBtn, deleteRecipeMutation.isPending && styles.deleteBtnDisabled]}
+              disabled={deleteRecipeMutation.isPending}
+            >
+              <Ionicons name="trash-outline" size={18} color="#ef4444" />
+              <Text style={styles.deleteBtnText}>
+                {deleteRecipeMutation.isPending ? "삭제 중..." : "요리기록에서 삭제"}
+              </Text>
+            </Pressable>
+          ) : matchedMap.size > 0 ? (
+            // 미완료 + 재료 있음: 재료소진 + 요리기록 삭제 나란히
+            <View style={styles.bottomBtnRow}>
+              <Pressable
+                onPress={handleCompleteRecipe}
+                style={[styles.completeBtn, isCompletingRecipe && styles.completeBtnDisabled]}
+                disabled={isCompletingRecipe}
+              >
+                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                <Text style={styles.completeBtnText}>
+                  {isCompletingRecipe
+                    ? "처리 중..."
+                    : `재료 소진 ${matchedMap.size}개`}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleDeleteRecipe}
+                style={[styles.deleteBtn, deleteRecipeMutation.isPending && styles.deleteBtnDisabled]}
+                disabled={deleteRecipeMutation.isPending}
+              >
+                <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                <Text style={styles.deleteBtnText}>
+                  {deleteRecipeMutation.isPending ? "삭제 중..." : "요리기록 삭제"}
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            // 미완료 + 재료 없음: 요리기록 삭제만
+            <Pressable
+              onPress={handleDeleteRecipe}
+              style={[styles.deleteBtn, deleteRecipeMutation.isPending && styles.deleteBtnDisabled]}
+              disabled={deleteRecipeMutation.isPending}
+            >
+              <Ionicons name="trash-outline" size={18} color="#ef4444" />
+              <Text style={styles.deleteBtnText}>
+                {deleteRecipeMutation.isPending ? "삭제 중..." : "요리기록 삭제"}
+              </Text>
+            </Pressable>
+          )}
         </View>
       )}
     </View>
@@ -428,7 +494,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
   },
+  bottomBtnRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
   completeBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -442,5 +513,23 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     fontWeight: "900",
+  },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    backgroundColor: "#fff5f5",
+  },
+  deleteBtnDisabled: { opacity: 0.6 },
+  deleteBtnText: {
+    color: "#ef4444",
+    fontSize: 14,
+    fontWeight: "800",
   },
 });

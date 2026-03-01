@@ -23,6 +23,7 @@ async function addRefrigerator(
     `${PREFIX}/refrigerator`,
     body,
   );
+
   return data;
 }
 
