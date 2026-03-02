@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   primaryBtn: {
     height: 46,
     borderRadius: 12,
-    backgroundColor: "#111",
+    backgroundColor: colors.PRIMARY,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 6,

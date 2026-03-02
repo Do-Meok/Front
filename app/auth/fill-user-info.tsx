@@ -240,8 +240,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   checkboxChecked: {
-    backgroundColor: colors.BLACK,
-    borderColor: colors.BLACK,
+    backgroundColor: colors.PRIMARY,
+    borderColor: colors.PRIMARY,
   },
   checkLabel: {
     flex: 1,
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
   primaryBtn: {
     height: 46,
     borderRadius: 12,
-    backgroundColor: "#111",
+    backgroundColor: colors.PRIMARY,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,

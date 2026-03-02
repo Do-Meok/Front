@@ -1,4 +1,5 @@
 const colors = {
+  PRIMARY: "#4a8181",
   BLACK: "#111111",
   WHITE: "#FFF",
   GRAY: "#555",
@@ -27,3 +28,4 @@ const queryKey = {
 };
 
 export { colors, queryKey };
+

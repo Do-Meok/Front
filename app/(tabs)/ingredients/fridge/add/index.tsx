@@ -1,5 +1,6 @@
 import DateInputWithCalendar from "@/components/DateInputWithCalendar";
 import PageHeader from "@/components/PageHeader";
+import { colors } from "@/constants";
 import useCreateIngredient from "@/hooks/ingredients/useCreateIngredient";
 import useUpdateIngredient from "@/hooks/ingredients/useUpdateIngredient";
 import { fromKoreanStorageType } from "@/utils/storageType";
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#111",
+    backgroundColor: colors.PRIMARY,
     paddingVertical: 14,
     borderRadius: 14,
   },

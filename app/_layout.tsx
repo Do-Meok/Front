@@ -4,8 +4,8 @@ import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
 import { NavigationProvider } from "@/providers/NavigationProvider";
 import { TutorialProvider } from "@/providers/TutorialProvider";
 import { QueryClientProvider } from "@tanstack/react-query";
-import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
@@ -18,9 +18,11 @@ export default function RootLayout() {
       <NavigationProvider>
         <TutorialProvider>
           <AuthKakaoRedirectHandler />
-          <Stack screenOptions={{ headerShown: false }} initialRouteName="(tabs)">
+          <Stack
+            screenOptions={{ headerShown: false }}
+            initialRouteName="(tabs)"
+          >
             <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="(onboarding)" />
             <Stack.Screen name="auth" />
             <Stack.Screen name="mypage" />
           </Stack>

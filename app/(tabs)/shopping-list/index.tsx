@@ -1,6 +1,7 @@
 import { updateShoppingList } from "@/api/shopping";
 import PageHeader from "@/components/PageHeader";
 import QueryErrorView from "@/components/QueryErrorView";
+import { colors } from "@/constants";
 import useCreateShopping from "@/hooks/shopping-list/useCreateShopping";
 import useDeleteShopping from "@/hooks/shopping-list/useDeleteShopping";
 import useGetShoppingList from "@/hooks/shopping-list/useGetShoppingList";
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#111",
+    backgroundColor: colors.PRIMARY,
     alignItems: "center",
     justifyContent: "center",
   },

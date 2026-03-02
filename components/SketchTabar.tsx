@@ -53,7 +53,7 @@ export default function SketchTabBar({
     return (
       <View ref={tabBarRef} style={wrapStyle}>
         {ingredientItems.map((item, index) => {
-          const color = item.focused ? colors.BLACK : colors.INACTIVE;
+          const color = item.focused ? colors.PRIMARY : colors.INACTIVE;
           return (
             <TabBarItem
               key={item.key}
@@ -76,7 +76,7 @@ export default function SketchTabBar({
     return (
       <View ref={tabBarRef} style={wrapStyle}>
         {recipeItems.map((item, index) => {
-          const color = item.focused ? colors.BLACK : colors.INACTIVE;
+          const color = item.focused ? colors.PRIMARY : colors.INACTIVE;
           return (
             <TabBarItem
               key={item.key}
@@ -102,7 +102,7 @@ export default function SketchTabBar({
         const focused = state.index === state.routes.findIndex((r) => r.key === route.key);
         const label =
           options.tabBarLabel?.toString() ?? options.title ?? route.name;
-        const color = focused ? colors.BLACK : colors.INACTIVE;
+        const color = focused ? colors.PRIMARY : colors.INACTIVE;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -132,7 +132,7 @@ export default function SketchTabBar({
             }
             label={label}
             color={color}
-            rippleColor={colors.BLACK}
+            rippleColor={colors.PRIMARY}
           />
         );
       })}

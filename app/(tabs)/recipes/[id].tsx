@@ -2,7 +2,7 @@ import { deleteIngredient } from "@/api/ingredients";
 import queryClient from "@/api/queryClient";
 import PageHeader from "@/components/PageHeader";
 import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
-import { queryKey } from "@/constants";
+import { colors, queryKey } from "@/constants";
 import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useGetRecipes from "@/hooks/recipes/useGetRecipes";
 import useDeleteRecipe from "@/hooks/recipes/useDeleteRecipe";
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 14,
-    backgroundColor: "#111",
+    backgroundColor: colors.PRIMARY,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -5,7 +5,6 @@ import { colors } from "@/constants";
 import useAuth from "@/hooks/useAuth";
 import { useNavigationContext } from "@/providers/NavigationProvider";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -13,7 +12,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from "react-native";
@@ -21,14 +19,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyPageScreen() {
   const { userInfoQuery } = useAuth();
-  const {
-    data: userInfo,
-    isLoading,
-    error,
-    refetch,
-  } = userInfoQuery;
-  const { isOnboardingCompleted, setOnboardingCompleted, hasToken } =
-    useNavigationContext();
+  const { data: userInfo, isLoading, error, refetch } = userInfoQuery;
+  const { hasToken } = useNavigationContext();
 
   const missingInfo =
     userInfo && (!userInfo.name || !userInfo.birth || !userInfo.phone_num);
@@ -104,7 +96,11 @@ export default function MyPageScreen() {
                   아이디/비밀번호 찾기를 위해 정보를 등록해주세요.
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.INACTIVE} />
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.INACTIVE}
+              />
             </Pressable>
           )}
 
@@ -115,11 +111,7 @@ export default function MyPageScreen() {
               <InfoRow label="이메일" value={userInfo?.email} />
               <InfoRow label="이름" value={userInfo?.name} />
               <InfoRow label="생년월일" value={userInfo?.birth} />
-              <InfoRow
-                label="전화번호"
-                value={userInfo?.phone_num}
-                isLast
-              />
+              <InfoRow label="전화번호" value={userInfo?.phone_num} isLast />
             </View>
           </View>
 
@@ -154,31 +146,6 @@ export default function MyPageScreen() {
                 }
                 style={[styles.settingItem, { borderBottomWidth: 0 }]}
               />
-            </View>
-          </View>
-
-          {/* 개발자 옵션 (임시: 온보딩 다시 보기) */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>개발자 옵션</Text>
-            <View style={styles.infoCard}>
-              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.infoLabel}>온보딩 다시 보기</Text>
-                <Switch
-                  value={!isOnboardingCompleted}
-                  onValueChange={async (on) => {
-                    if (on) {
-                      await AsyncStorage.setItem("onboarding_completed", "false");
-                      setOnboardingCompleted(false);
-                      router.replace("/(onboarding)");
-                    } else {
-                      await AsyncStorage.setItem("onboarding_completed", "true");
-                      setOnboardingCompleted(true);
-                    }
-                  }}
-                  trackColor={{ false: "#e0e0e0", true: "#111" }}
-                  thumbColor="#fff"
-                />
-              </View>
             </View>
           </View>
         </ScrollView>

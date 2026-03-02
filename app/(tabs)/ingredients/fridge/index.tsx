@@ -1,6 +1,6 @@
 import { getCompartmentIngredients } from "@/api/refrigerator";
 import PageHeader from "@/components/PageHeader";
-import { queryKey } from "@/constants";
+import { colors, queryKey } from "@/constants";
 import useGetIngredients from "@/hooks/ingredients/useGetIngredients";
 import useAssignIngredientToCompartment from "@/hooks/refrigerator/useAssignIngredientToCompartment";
 import useDeleteRefrigerator from "@/hooks/refrigerator/useDeleteRefrigerator";
@@ -973,7 +973,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingVertical: 13,
     paddingHorizontal: 24,
-    backgroundColor: "#111",
+    backgroundColor: colors.PRIMARY,
     borderRadius: 14,
   },
   addFridgeBtnText: {
@@ -1128,7 +1128,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#111",
+    backgroundColor: colors.PRIMARY,
     paddingVertical: 14,
     borderRadius: 14,
     marginTop: 12,

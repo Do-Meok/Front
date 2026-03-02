@@ -1,6 +1,7 @@
 import QueryErrorView from "@/components/QueryErrorView";
 import RecipeDetailContent from "@/components/RecipeDetailContent";
 import RecipeLoadingScreen from "@/components/RecipeLoadingScreen";
+import { colors } from "@/constants";
 import useSearchRecipesByName from "@/hooks/assistant/useSearchRecipesByName";
 import useSaveRecipe from "@/hooks/recipes/useSaveRecipe";
 import { useNavigationContext } from "@/providers/NavigationProvider";
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 18,
     borderRadius: 12,
-    backgroundColor: "#111",
+    backgroundColor: colors.PRIMARY,
   },
   searchBtnDisabled: { backgroundColor: "#ccc" },
   searchBtnText: { fontSize: 14, fontWeight: "800", color: "#fff" },
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 14,
-    backgroundColor: "#111",
+    backgroundColor: colors.PRIMARY,
   },
   saveToLogBtnDisabled: { opacity: 0.6 },
   saveToLogBtnText: { fontSize: 15, fontWeight: "800", color: "#fff" },
