@@ -1,5 +1,6 @@
 import { getKakaoAuthUrl } from "@/api/auth";
-import axiosInstance, { PREFIX } from "@/api/axios";
+import axiosInstance, { API_URL, PREFIX } from "@/api/axios";
+import { markKakaoLoginStarted } from "@/components/AuthKakaoRedirectHandler";
 import BackHeader from "@/components/BackHeader";
 import { INJECTED_JS } from "@/constants/injected_js";
 import { useNavigationContext } from "@/providers/NavigationProvider";
@@ -19,6 +20,7 @@ export default function KakaoWebViewScreen() {
   const processRef = useRef(false);
 
   useEffect(() => {
+    markKakaoLoginStarted();
     getKakaoAuthUrl().then(setKakaoUrl);
   }, []);
 
@@ -59,6 +61,12 @@ export default function KakaoWebViewScreen() {
             try {
               const msg = JSON.parse(event.nativeEvent.data);
               if (msg.type !== "kakao_redirect") return;
+              // 우리 백엔드 페이지에서 온 메시지만 신뢰 (다른 사이트로 이동 후 위조 토큰 주입 방지)
+              if (
+                typeof msg.url !== "string" ||
+                !msg.url.startsWith(`${API_URL}/`)
+              )
+                return;
 
               processRef.current = true;
               setPageLoading(true);

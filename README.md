@@ -88,11 +88,10 @@ eas build --profile production --platform android    # 스토어 배포
 
 ### 백엔드 연결
 
-API 주소는 [`api/config.ts`](./api/config.ts)에서 설정합니다.
+API 주소는 환경변수 `EXPO_PUBLIC_API_URL`로 주입합니다. `.env.example`을 `.env`로 복사한 뒤 값을 채우세요. (`.env`는 커밋되지 않습니다. EAS 빌드 시에는 `eas env:create`로 등록)
 
-```ts
-export const API_URL = "https://domeok.augustzero.duckdns.org";
-export const PREFIX = "/api/v1";
+```bash
+cp .env.example .env
 ```
 
 ## 스크립트

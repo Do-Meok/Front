@@ -32,7 +32,6 @@ function useLogin() {
         // setHasToken과 같은 동기 블록에서 호출해야 네비게이션 가드와 충돌 없이 로딩 화면을 보여줄 수 있음
         router.replace("/auth/loading");
       } else {
-        console.warn("로그인 응답에 토큰이 없습니다:", data);
         Alert.alert("오류", "로그인 응답에 토큰이 없습니다.");
       }
     },

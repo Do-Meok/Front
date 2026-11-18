@@ -10,6 +10,12 @@ import { useEffect } from "react";
  * 카카오 로그인 후 백엔드가 앱으로 리다이렉트할 때
  * domeok://auth/kakao?access_token=...&refresh_token=... 형식의 딥링크를 처리합니다.
  */
+// 외부 앱/웹페이지가 공격자 토큰이 담긴 딥링크로 강제 로그인시키는 것을 막기 위해, 앱에서 카카오 로그인을 시작한 직후에만 허용
+let kakaoLoginStartedAt = 0;
+export const markKakaoLoginStarted = () => {
+  kakaoLoginStartedAt = Date.now();
+};
+
 export default function AuthKakaoRedirectHandler() {
   const { setHasToken } = useNavigationContext();
 
@@ -17,6 +23,8 @@ export default function AuthKakaoRedirectHandler() {
     const handleUrl = async (event: { url: string }) => {
       const url = event.url;
       if (!url || !url.includes("auth/kakao")) return;
+      if (Date.now() - kakaoLoginStartedAt > 10 * 60 * 1000) return;
+      kakaoLoginStartedAt = 0;
 
       const parsed = Linking.parse(url);
       const query = (parsed.queryParams || {}) as Record<string, string>;
